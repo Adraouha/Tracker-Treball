@@ -1,0 +1,12 @@
+-d
+frontend/docs/javadoc
+-sourcepath
+backend/src/main/java
+-subpackages
+com.trackertreball
+-windowtitle
+Tracker Treball API Documentation
+-doctitle
+Tracker Treball - Backend REST API
+-author
+-version

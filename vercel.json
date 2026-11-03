@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "name": "tracker-treball",
+  "public": true,
+  "routes": [
+    {
+      "src": "/docs/javadoc/(.*)",
+      "dest": "/frontend/docs/javadoc/$1"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/frontend/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ]
+}
