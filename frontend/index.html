@@ -63,7 +63,7 @@
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </span>
-            <input id="login-password" class="login-input" type="password" value="Admin#2026!" placeholder="••••••••••••" required>
+            <input id="login-password" class="login-input" type="password" value="Tracker2026!" placeholder="••••••••••••" required>
             <span id="btn-toggle-pwd" class="login-input-eye">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -72,6 +72,8 @@
             </span>
           </div>
         </div>
+
+        <div id="login-error-msg" style="display:none; color: #dc2626; font-size: 0.85rem; margin-top: 10px; margin-bottom: 12px; background: #fee2e2; border: 1px solid #fca5a5; padding: 10px; border-radius: 6px; text-align: center;"></div>
 
         <div class="login-options-row">
           <label class="login-remember-me">
@@ -139,16 +141,19 @@
           <button id="btn-lang-es" class="btn-pill" type="button">ES</button>
         </div>
 
-        <!-- Boton Documentacion Javadoc -->
-        <a href="docs/javadoc/index.html" target="_blank" id="btn-nav-javadoc" class="btn-nav-doc" title="Veure documentació Javadoc de l'API / Ver documentación Javadoc de la API">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-          </svg>
-          <span data-i18n="nav.javadoc">Javadoc API</span>
-        </a>
+        
 
         <!-- Badge de Usuario con funcion de Perfil -->
+        <!-- Selector interactivo de Rol RBAC -->
+        <div class="rbac-role-selector-wrap" title="Cambiar rol activo para pruebas de permisos (RBAC)">
+          <span class="rbac-role-label">ROL RBAC:</span>
+          <select id="select-active-role" class="rbac-role-dropdown" aria-label="Seleccionar Rol RBAC">
+            <option value="ADMIN" selected>ADMIN (Director General)</option>
+            <option value="MANAGER">MANAGER (Responsable)</option>
+            <option value="EMPLOYEE">EMPLEADO</option>
+          </select>
+        </div>
+
         <div class="user-badge" id="user-badge-profile" title="Clic per veure el perfil d'usuari / Clic para ver el perfil">
           <div class="user-avatar-initials" id="nav-user-avatar">HA</div>
           <div class="user-meta-text">
@@ -268,14 +273,18 @@
               <span>PRL Help Center</span>
             </button>
 
-            <!-- Acceso a Documentacion Javadoc -->
-            <a href="docs/javadoc/index.html" target="_blank" class="sidebar-link link-javadoc" id="nav-btn-javadoc" style="text-decoration: none;">
+            <!-- Centros de Trabajo Oficiales -->
+            <button id="nav-btn-centros" class="sidebar-link" type="button">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                <path d="M3 21h18"></path>
+                <path d="M5 21V7l8-4v18"></path>
+                <path d="M19 21V11l-6-4"></path>
+                <line x1="9" y1="9" x2="9" y2="9.01"></line>
+                <line x1="9" y1="13" x2="9" y2="13.01"></line>
+                <line x1="9" y1="17" x2="9" y2="17.01"></line>
               </svg>
-              <span data-i18n="nav.javadoc">Javadoc API Docs</span>
-            </a>
+              <span data-i18n="nav.workCenters">Centros de Trabajo</span>
+            </button>
           </nav>
         </div>
 
@@ -295,8 +304,8 @@
         <section id="view-dashboard" class="subview active">
           
           <div class="greeting-header">
-            <h1 class="greeting-title" id="dash-greeting-name">Buenos días, Mohamed</h1>
-            <div class="greeting-sub">Lunes, 2 de noviembre de 2026 · Vic, Barcelona (14°C, Parcialmente nublado)</div>
+            <h1 class="greeting-title" id="dash-greeting-name">Buenos días, Hassan</h1>
+            <div class="greeting-sub" id="dash-greeting-sub">Cargando fecha actual, centro y clima...</div>
           </div>
 
           <!-- TARJETA PRINCIPAL: CONTROL HORARIO Y FICHAJE DINAMICO -->
@@ -388,17 +397,17 @@
 
             <div class="human-card">
               <div class="card-label" id="lbl-card-traffic">Tráfico y Desplazamiento</div>
-              <div class="card-title" id="commute-office">Oficina Central Vic</div>
+              <div class="card-title" id="commute-office">Sede Central Barcelona (Avinguda Diagonal 450)</div>
               <div class="card-metric-highlight" id="commute-minutes">22 min</div>
-              <div class="card-subtext" id="commute-status" style="margin-bottom: 8px;">Tráfico: Fluido · C-17 sin retenciones</div>
-              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px;" id="traffic-source">Fuente: SCT & Red Viaria Vic</div>
+              <div class="card-subtext" id="commute-status" style="margin-bottom: 8px;">Tráfico: Fluido · Ronda de Dalt y Diagonal despejadas</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px;" id="traffic-source">Fuente: SCT - Servei Català de Trànsit & Guàrdia Urbana</div>
               <button id="btn-ver-ruta" class="btn-clean btn-clean-outline" type="button" style="width: 100%; font-size: 0.78rem; padding: 5px;">Ver ruta recomendada &rarr;</button>
             </div>
 
             <div class="human-card">
               <div class="card-label" id="lbl-card-weather">Tiempo en tu zona</div>
-              <div class="card-title" id="weather-location">Vic, Barcelona</div>
-              <div class="card-metric-highlight" id="weather-temp">14 °C</div>
+              <div class="card-title" id="weather-location">Barcelona (Cataluña)</div>
+              <div class="card-metric-highlight" id="weather-temp">17 °C</div>
               <div class="card-subtext" id="weather-desc" style="margin-bottom: 8px;">Cargando previsión...</div>
               <div style="font-size: 0.72rem; color: var(--text-muted);" id="weather-meta">Humedad: -- · Viento: --</div>
               <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 4px;" id="weather-source">Open-Meteo Realtime API</div>
@@ -409,7 +418,7 @@
           <div class="cards-grid-2">
             <div class="human-card">
               <div class="card-label">Recordatorios y avisos</div>
-              <div class="notices-list">
+              <div class="notices-list" id="notices-list-container">
                 <div class="notice-item">
                   <span class="notice-bullet"></span>
                   <div>
@@ -565,9 +574,11 @@
 
           <!-- Pestañas de Filtro Reactivas -->
           <div class="emp-tabs-row">
-            <button id="tab-emp-all" class="emp-tab-pill active" type="button">Todos los empleados · 21</button>
-            <button id="tab-emp-active" class="emp-tab-pill red-count" type="button">Activos · 19</button>
-            <button id="tab-emp-archived" class="emp-tab-pill red-count" type="button">Archivados · 0</button>
+            <button id="tab-emp-all" class="emp-tab-pill active" type="button">Todos · 21</button>
+            <button id="tab-emp-active" class="emp-tab-pill" type="button">Activos · 19</button>
+            <button id="tab-emp-leaves" class="emp-tab-pill" type="button">De baja · 1</button>
+            <button id="tab-emp-vacations" class="emp-tab-pill" type="button">De vacaciones · 1</button>
+            <button id="tab-emp-archived" class="emp-tab-pill" type="button">Archivados · 0</button>
           </div>
 
           <!-- Barra de Búsqueda y Filtros Dropdown -->
@@ -595,6 +606,17 @@
               <option value="Activo">Activo</option>
               <option value="Vacaciones">Vacaciones</option>
               <option value="Baja">Baja</option>
+            </select>
+
+            
+            <select id="filter-center" class="emp-filter-select">
+              <option value="">Centro de Trabajo ⌄</option>
+              <option value="Madrid">Madrid</option>
+              <option value="Barcelona">Barcelona</option>
+              <option value="Bilbao">Bilbao</option>
+              <option value="Sevilla">Sevilla</option>
+              <option value="Valencia">Valencia</option>
+              <option value="Extranjero">Extranjero</option>
             </select>
 
             <select id="filter-supervisor" class="emp-filter-select">
@@ -667,9 +689,14 @@
               <h1 class="emp-page-title">Registro de Jornadas Laborales</h1>
               <p class="emp-page-sub">Auditoría diaria de entradas, pausas, salidas y cómputo de horas con firma SHA-256.</p>
             </div>
-            <button class="btn-clean btn-clean-primary" type="button" onclick="alert('Exportando registro mensual de jornadas en formato oficial PDF / Excel')">
-              <span>Exportar Informe Oficial</span>
-            </button>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-open-manual-shift" class="btn-clean btn-clean-primary" type="button">
+                <span>+ Registrar Jornada Manual</span>
+              </button>
+              <button class="btn-clean btn-clean-outline" type="button" onclick="alert('Exportando registro oficial de jornadas en formato PDF / Excel.')">
+                <span>Exportar Informe Oficial</span>
+              </button>
+            </div>
           </div>
 
           <!-- KPIs Jornadas -->
@@ -737,27 +764,27 @@
                   <td>2 nov 2026</td>
                   <td>08:45</td>
                   <td>17:30</td>
-                  <td>Presencial Vic</td>
+                  <td>Presencial Barcelona</td>
                   <td><span class="status-pill badge-active">En Curso</span></td>
-                  <td><span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">SHA: 7f83b165...</span></td>
+                  <td><span class="badge-signature"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Firma Digital Válida</span></td>
                 </tr>
                 <tr>
                   <td><strong>Albert Guiteras</strong></td>
                   <td>2 nov 2026</td>
                   <td>08:50</td>
                   <td>17:30</td>
-                  <td>Presencial Vic</td>
+                  <td>Presencial Barcelona</td>
                   <td><span class="status-pill badge-active">En Curso</span></td>
-                  <td><span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">SHA: a1c944f2...</span></td>
+                  <td><span class="badge-signature"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Firma Digital Válida</span></td>
                 </tr>
                 <tr>
                   <td><strong>Alba Garcia</strong></td>
                   <td>2 nov 2026</td>
                   <td>09:00</td>
                   <td>17:30</td>
-                  <td>Presencial Vic</td>
+                  <td>Presencial Barcelona</td>
                   <td><span class="status-pill badge-active">En Curso</span></td>
-                  <td><span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">SHA: 34b9e102...</span></td>
+                  <td><span class="badge-signature"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Firma Digital Válida</span></td>
                 </tr>
                 <tr>
                   <td><strong>Marc Barranco Cordero</strong></td>
@@ -766,7 +793,7 @@
                   <td>17:30</td>
                   <td>Híbrido Remoto</td>
                   <td><span class="status-pill badge-active">En Curso</span></td>
-                  <td><span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">SHA: 98dfa218...</span></td>
+                  <td><span class="badge-signature"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg> Firma Digital Válida</span></td>
                 </tr>
                 <tr>
                   <td><strong>Elena Sánchez</strong></td>
@@ -789,10 +816,33 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Tarjeta de Reporte Semanal y Mensual de Pausas y Horarios -->
+          <div class="human-card" style="margin-top: 24px;">
+            <div class="card-label">Reportes de Auditoría de Pausas y Horarios</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px;">
+                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 8px;">📊 Resumen Semanal</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;"><span>Horas trabajadas:</span><strong id="rep-sem-horas">38.5 h</strong></div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;"><span>Tiempo total en pausas:</span><strong id="rep-sem-pausas">120 min</strong></div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding-top: 8px; border-top: 1px dashed #CBD5E1; color: #DC2626;"><span>⚠️ Tiempo adicional consumido:</span><strong id="rep-sem-adicional">0 h 15 min</strong></div>
+              </div>
+              <div style="background: #F8FAFC; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px;">
+                <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 8px;">📅 Resumen Mensual</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;"><span>Horas trabajadas:</span><strong id="rep-men-horas">154.0 h</strong></div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;"><span>Tiempo total en pausas:</span><strong id="rep-men-pausas">480 min</strong></div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding-top: 8px; border-top: 1px dashed #CBD5E1; color: #DC2626;"><span>⚠️ Tiempo adicional consumido:</span><strong id="rep-men-adicional">0 h 45 min</strong></div>
+              </div>
+            </div>
+          </div>
         </section>
+        <!-- =================================================================
+             PANTALLA: VACACIONES (GESTION Y APROBACIONES DE AUSENCIAS)
+             ================================================================= -->
+        
 
         <!-- =================================================================
-             PANTALLA: PAUSAS (CONTROL DE DESCANSOS Y ERGONOMIA PRL)
+             PANTALLA: PAUSAS Y DESCANSOS LABORALES
              ================================================================= -->
         <section id="view-pausas" class="subview" style="display: none;">
           <div class="emp-breadcrumb">
@@ -802,9 +852,9 @@
           <div class="employees-top-bar">
             <div>
               <h1 class="emp-page-title">Control de Pausas y Descansos</h1>
-              <p class="emp-page-sub">Monitorización de pausas de comida, descansos visuales obligatorios de PRL y pausas de café.</p>
+              <p class="emp-page-sub">Monitorización de tiempos de café, almuerzo, descansos de convenio y cómputo de minutos adicionales.</p>
             </div>
-            <button class="btn-clean btn-clean-primary" type="button" onclick="alert('Registro rápido de pausa para el usuario actual activado.')">
+            <button id="btn-open-manual-break" class="btn-clean btn-clean-primary" type="button">
               <span>+ Registrar Pausa Manual</span>
             </button>
           </div>
@@ -812,25 +862,25 @@
           <div class="emp-kpi-grid">
             <div class="emp-kpi-card">
               <div>
-                <div class="emp-kpi-label">Pausas activas ahora</div>
-                <div class="emp-kpi-number">2</div>
-                <div class="emp-kpi-note green">Descanso reglamentario de mediodía</div>
+                <div class="emp-kpi-label">Pausas registradas hoy</div>
+                <div class="emp-kpi-number" id="kpi-pauses-count">19</div>
+                <div class="emp-kpi-note green">Cumplimiento del descanso del 95%</div>
               </div>
               <div class="emp-kpi-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
                   <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
-                  <line x1="6" y1="2" x2="6" y2="4"></line>
-                  <line x1="10" y1="2" x2="10" y2="4"></line>
+                  <line x1="6" y1="1" x2="6" y2="4"></line>
+                  <line x1="10" y1="1" x2="10" y2="4"></line>
                 </svg>
               </div>
             </div>
 
             <div class="emp-kpi-card">
               <div>
-                <div class="emp-kpi-label">Duración media diaria</div>
-                <div class="emp-kpi-number">24 min</div>
-                <div class="emp-kpi-note">Dentro del margen de convenio</div>
+                <div class="emp-kpi-label">Duración media de descanso</div>
+                <div class="emp-kpi-number">15 min</div>
+                <div class="emp-kpi-note green">Alineado con el convenio colectivo</div>
               </div>
               <div class="emp-kpi-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -842,71 +892,45 @@
 
             <div class="emp-kpi-card">
               <div>
-                <div class="emp-kpi-label">Conformidad PRL</div>
-                <div class="emp-kpi-number">100%</div>
-                <div class="emp-kpi-note green">Descansos visuales cada 2h cumplidos</div>
+                <div class="emp-kpi-label">Tiempo adicional consumido</div>
+                <div class="emp-kpi-number" id="kpi-excess-pauses-val">0 min (0.0 h)</div>
+                <div class="emp-kpi-note" id="kpi-excess-pauses-sub">Exceso de pausas sobre el límite</div>
               </div>
               <div class="emp-kpi-icon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
                 </svg>
               </div>
             </div>
           </div>
 
-          <div class="emp-table-container" style="margin-top: 20px;">
-            <table class="emp-table">
+          <div class="emp-tabs-row" style="margin-top: 18px; margin-bottom: 16px;">
+            <button id="btn-pausas-context-my" class="emp-tab-pill active" type="button">Mis Pausas (Historial Semanal)</button>
+            <button id="btn-pausas-context-team" class="emp-tab-pill rbac-manager-up" type="button">Mi Equipo</button>
+            <button id="btn-pausas-context-all" class="emp-tab-pill rbac-admin-only" type="button">Toda la Organización</button>
+          </div>
+          <div class="employees-table-card" style="margin-top: 20px;">
+            <table class="employees-table">
               <thead>
                 <tr>
                   <th>Empleado</th>
-                  <th>Tipo de Descanso</th>
-                  <th>Límite</th>
-                  <th>Inicio</th>
-                  <th>Fin</th>
+                  <th>Centro</th>
+                  <th>Tipo de Pausa</th>
+                  <th>Horario</th>
                   <th>Duración</th>
+                  <th>Minutos Adicionales</th>
                   <th>Estado</th>
-                  <th>Observaciones / Auditoría</th>
                 </tr>
               </thead>
-              <tbody id="pausas-table-body">
-                <tr>
-                  <td><strong>Eduardo Vázquez</strong></td>
-                  <td>Descanso Visual PVD (PRL)</td>
-                  <td>15 min</td>
-                  <td>11:15</td>
-                  <td>11:25</td>
-                  <td>10 min</td>
-                  <td><span class="status-pill badge-active">Completada</span></td>
-                  <td><span style="font-size: 0.82rem; color: var(--text-muted);">Dentro de tiempo reglamentario</span></td>
-                </tr>
-                <tr>
-                  <td><strong>Barbara Orduz Romero</strong></td>
-                  <td>Pausa de Café</td>
-                  <td>15 min</td>
-                  <td>10:45</td>
-                  <td>11:00</td>
-                  <td>15 min</td>
-                  <td><span class="status-pill badge-active">Completada</span></td>
-                  <td><span style="font-size: 0.82rem; color: var(--text-muted);">Dentro de tiempo reglamentario</span></td>
-                </tr>
-                <tr>
-                  <td><strong>David Vélez</strong></td>
-                  <td>Pausa de Almuerzo</td>
-                  <td>60 min</td>
-                  <td>13:30</td>
-                  <td>14:42</td>
-                  <td>72 min</td>
-                  <td><span class="status-pill badge-active">Completada</span></td>
-                  <td><span class="status-pill" style="background: #FEE2E2; color: #DC2626; font-weight: 700; font-size: 0.78rem;">+12 minutos de pausa</span></td>
-                </tr>
+              <tbody id="tbody-pausas-table">
+                <!-- Se pobla dinamicamente -->
               </tbody>
             </table>
           </div>
         </section>
 
-        <!-- =================================================================
-             PANTALLA: VACACIONES (GESTION Y APROBACIONES DE AUSENCIAS)
-             ================================================================= -->
         <section id="view-vacaciones" class="subview" style="display: none;">
           <div class="emp-breadcrumb">
             <span id="lbl-vac-breadcrumb-org">Mi organización</span> &rsaquo; <span class="active" id="lbl-vac-breadcrumb-active">Vacaciones y Ausencias</span>
@@ -993,7 +1017,7 @@
               <span id="badge-supervisor-count" style="margin-left: 6px; background-color: var(--primary); color: #FFFFFF; font-size: 0.72rem; padding: 2px 7px; border-radius: 10px;">3</span>
             </button>
             <button type="button" class="vac-subtab-btn" id="btn-subtab-holidays">
-              <span id="txt-subtab-holidays">Festivos Oficiales (API España / Vic)</span>
+              <span id="txt-subtab-holidays">Festivos Oficiales por Centro</span>
             </button>
           </div>
 
@@ -1109,11 +1133,11 @@
           <div id="vac-panel-holidays" class="vac-panel-container" style="display: none;">
             <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               <div>
-                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);" id="lbl-holidays-title">Festivos Oficiales España / Cataluña / Vic (2026)</h3>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-main);" id="lbl-holidays-title">Festivos Oficiales según Centro de Trabajo (2026)</h3>
                 <p style="margin: 2px 0 0 0; font-size: 0.82rem; color: var(--text-muted);" id="lbl-holidays-sub">Sincronizados automáticamente desde la API oficial de festivos públicos.</p>
               </div>
               <div style="font-size: 0.78rem; background: var(--bg-card); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 4px;" id="lbl-holidays-source">
-                Fuente: API Nager.Date Oficial & Festivos Vic
+                Fuente: Calendario Laboral Oficial según Sede y Comunidad
               </div>
             </div>
 
@@ -1149,7 +1173,7 @@
               <h1 class="emp-page-title">Gestión de Bajas Médicas y Salud Laboral</h1>
               <p class="emp-page-sub">Seguimiento confidencial de procesos de incapacidad temporal, partes médicos y mutua laboral.</p>
             </div>
-            <button class="btn-clean btn-clean-primary" type="button" onclick="alert('Registro confidencial de parte de baja/alta abierto.')">
+            <button class="btn-clean btn-clean-primary" type="button" id="btn-open-new-leave">
               <span>+ Registrar Parte Médico</span>
             </button>
           </div>
@@ -1212,7 +1236,7 @@
                   <th>Estado del Expediente</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="tbody-leaves-table">
                 <tr>
                   <td><strong>Roger Umpiérrez</strong></td>
                   <td>Contingencia Común (Traumatología)</td>
@@ -1239,7 +1263,7 @@
               <h1 class="emp-page-title">Proyectos y Asignación de Recursos</h1>
               <p class="emp-page-sub">Control de avances de Sprint, presupuesto de horas y equipo asignado.</p>
             </div>
-            <button class="btn-clean btn-clean-primary" type="button" onclick="alert('Creación de nuevo proyecto corporativo.')">
+            <button class="btn-clean btn-clean-primary" type="button" id="btn-open-new-project">
               <span>+ Nuevo Proyecto</span>
             </button>
           </div>
@@ -1289,7 +1313,7 @@
           </div>
 
           <!-- Tarjetas de Proyectos en Bento Grid -->
-          <div class="cards-grid-3" style="margin-top: 20px;">
+          <div id="projects-grid-container" class="cards-grid-3" style="margin-top: 20px;">
             <div class="human-card">
               <div class="card-label">Proyecto Principal</div>
               <div class="card-title">Tracker Treball SaaS</div>
@@ -1334,6 +1358,78 @@
         <!-- =================================================================
              PANTALLA 3: PRL HELP CENTER
              ================================================================= -->
+        
+
+        <!-- =================================================================
+             PANTALLA: SEDES Y CENTROS DE TRABAJO (RED CORPORATIVA)
+             ================================================================= -->
+        <section id="view-centros" class="subview" style="display: none;">
+          <div class="emp-breadcrumb">
+            <span>Mi organización</span> &rsaquo; <span class="active">Centros de Trabajo</span>
+          </div>
+
+          <div class="employees-top-bar">
+            <div>
+              <h1 class="emp-page-title">Red de Centros de Trabajo y Sedes Oficiales</h1>
+              <p class="emp-page-sub">Directorio corporativo de sedes físicas con dirección oficial, código de centro, horario y asignación de plantilla.</p>
+            </div>
+            <div style="font-size: 0.85rem; background: #EEF2F6; padding: 6px 14px; border-radius: 6px; font-weight: 600; color: #1E293B;">
+              🏛️ 6 Sedes Operativas · Barcelona (Sede Central)
+            </div>
+          </div>
+
+          <div class="emp-kpi-grid">
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Centros de Trabajo</div>
+                <div class="emp-kpi-number">6</div>
+                <div class="emp-kpi-note green">España y Sede Internacional</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 21h18"></path>
+                  <path d="M5 21V7l8-4v18"></path>
+                  <path d="M19 21V11l-6-4"></path>
+                </svg>
+              </div>
+            </div>
+
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Sede Central Barcelona</div>
+                <div class="emp-kpi-number" id="kpi-center-bcn-count">3 miembros</div>
+                <div class="emp-kpi-note green">Hassan Adraou, Albert Guiteras, Albert Profe</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
+            </div>
+
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Delegaciones Territoriales</div>
+                <div class="emp-kpi-number">18 miembros</div>
+                <div class="emp-kpi-note">Madrid (4), Bilbao (4), Sevilla (4), Valencia (3), París (3)</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contenedor Rejilla de Centros -->
+          <div id="work-centers-container" class="work-centers-grid">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </section>
+
         <section id="view-prl" class="subview" style="display: none;">
           
           <div class="prl-banner-sos">
@@ -1351,7 +1447,7 @@
               <form id="incident-form">
                 <div class="prl-form-group">
                   <label for="inc-location" class="prl-label">Ubicación o Centro de Trabajo</label>
-                  <input id="inc-location" class="prl-input" type="text" value="Oficina Central Vic - Planta 1" required>
+                  <input id="inc-location" class="prl-input" type="text" value="Sede Central Barcelona - Planta 1" required>
                 </div>
 
                 <div class="prl-form-group">
@@ -1396,6 +1492,263 @@
 
         </section>
 
+      
+        <!-- Application Global Footer -->
+        </section>
+
+        <!-- =====================================================================
+             FASE 3.1: PANEL DE SUPERVISION GLOBAL (DIRECTOR GENERAL / ADMIN)
+             ===================================================================== -->
+        <section id="view-admin-panel" class="subview" style="display: none;">
+          <div class="emp-breadcrumb">
+            <span>Organización</span> &rsaquo; <span class="active">Consola de Dirección General</span>
+          </div>
+
+          <div class="employees-top-bar">
+            <div>
+              <h1 class="emp-page-title">Consola de Supervisión Ejecutiva</h1>
+              <p class="emp-page-sub">Panel de control integral para el Director General: aprobación de vacaciones, turnos, desviaciones y proyectos.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-admin-refresh" class="btn-clean btn-clean-primary" type="button">
+                <span>Refrescar Datos</span>
+              </button>
+              <button id="btn-admin-open-db" class="btn-clean" style="background: #4F46E5; color: white; border: none; font-weight: 700;" type="button">
+                <span>Abrir Gestor Visual BD</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 KPIs Ejecutivos -->
+          <div class="admin-console-grid">
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Vacaciones por Resolver</div>
+                <div class="emp-kpi-number" id="kpi-admin-pending-vac" style="color: #D97706;">2</div>
+                <div class="emp-kpi-note green">Aprobación, ajustes o rechazo directo</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+            </div>
+
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Plantilla Total Activa</div>
+                <div class="emp-kpi-number">19 / 21</div>
+                <div class="emp-kpi-note">En 6 centros de trabajo oficiales</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                </svg>
+              </div>
+            </div>
+
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Desviaciones de Pausas</div>
+                <div class="emp-kpi-number" style="color: #DC2626;">+15 min</div>
+                <div class="emp-kpi-note">Cómputo adicional registrado</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+            </div>
+
+            <div class="emp-kpi-card">
+              <div>
+                <div class="emp-kpi-label">Proyectos en Ejecución</div>
+                <div class="emp-kpi-number">6</div>
+                <div class="emp-kpi-note green">100% de sprints al día</div>
+              </div>
+              <div class="emp-kpi-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modulo 1: Resolucion Agil de Vacaciones -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <h2 class="admin-card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Gestión Ágil de Vacaciones (Aprobar, Rechazar o Pedir Ajustes)
+              </h2>
+              <span class="tt-badge tt-badge-warning" id="admin-vac-badge-count">Pendientes de revisión</span>
+            </div>
+            <div class="tt-table-container">
+              <table class="tt-table">
+                <thead>
+                  <tr>
+                    <th>Empleado</th>
+                    <th>Centro</th>
+                    <th>Período Solicitado</th>
+                    <th>Días</th>
+                    <th>Tipo</th>
+                    <th>Estado Actual</th>
+                    <th>Acción del Director</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-admin-vacations">
+                  <!-- Se llena dinamicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Modulo 2: Turnos y Asignaciones Globales -->
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <h2 class="admin-card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                Supervisión Global de Turnos, Proyectos y Horas
+              </h2>
+            </div>
+            <div class="tt-table-container">
+              <table class="tt-table">
+                <thead>
+                  <tr>
+                    <th>Departamento / Área</th>
+                    <th>Responsable (Manager)</th>
+                    <th>Centro Sede</th>
+                    <th>Personal Asignado</th>
+                    <th>Horas Imputadas</th>
+                    <th>Estado de Cumplimiento</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-admin-shifts-summary">
+                  <tr>
+                    <td><strong>Tecnología & Producto</strong></td>
+                    <td>Albert Guiteras</td>
+                    <td>Barcelona</td>
+                    <td>8 empleados</td>
+                    <td>312 h / mes</td>
+                    <td><span class="tt-badge tt-badge-success">Excelente (98%)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Operaciones & Soporte</strong></td>
+                    <td>Jose Daniel Calicchio</td>
+                    <td>Madrid</td>
+                    <td>4 empleados</td>
+                    <td>160 h / mes</td>
+                    <td><span class="tt-badge tt-badge-success">En objetivo (95%)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Personas, Talento & PRL</strong></td>
+                    <td>Alba Garcia</td>
+                    <td>Barcelona</td>
+                    <td>4 empleados</td>
+                    <td>155 h / mes</td>
+                    <td><span class="tt-badge tt-badge-success">En objetivo (96%)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Administración & Finanzas</strong></td>
+                    <td>YingYing Xu</td>
+                    <td>Extranjero</td>
+                    <td>5 empleados</td>
+                    <td>190 h / mes</td>
+                    <td><span class="tt-badge tt-badge-success">En objetivo (97%)</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- =====================================================================
+             FASE 3.4: GESTOR VISUAL DE BASE DE DATOS (VISOR / ADMINER INTEGRADO)
+             ===================================================================== -->
+        <section id="view-db-visor" class="subview" style="display: none;">
+          <div class="emp-breadcrumb">
+            <span>Administración</span> &rsaquo; <span class="active">Gestor Visual de Base de Datos</span>
+          </div>
+
+          <div class="employees-top-bar">
+            <div>
+              <h1 class="emp-page-title">Gestor Visual de Base de Datos (Admin Visor)</h1>
+              <p class="emp-page-sub">Consulta, añade, modifica y elimina registros directamente en la base de datos de manera segura y en tiempo real, sin recurrir a DBeaver.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-db-refresh" class="btn-clean btn-clean-primary" type="button">
+                <span>Refrescar Tabla</span>
+              </button>
+              <button id="btn-db-add-row" class="btn-clean" style="background: #10B981; color: white; border: none; font-weight: 700;" type="button">
+                <span>+ Añadir Registro</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Barra de Control del Visor -->
+          <div class="db-visor-toolbar">
+            <div class="db-visor-select-wrap">
+              <label for="select-db-table" style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">Tabla Activa:</label>
+              <select id="select-db-table" class="db-visor-select">
+                <option value="employees">employees (Directorio de Empleados)</option>
+                <option value="work_centers">work_centers (Centros de Trabajo)</option>
+                <option value="work_center_holidays">work_center_holidays (Festivos Oficiales)</option>
+                <option value="vacation_requests">vacation_requests (Solicitudes de Vacaciones)</option>
+                <option value="medical_leaves">medical_leaves (Bajas Médicas)</option>
+                <option value="projects">projects (Proyectos Asignados)</option>
+                <option value="attendance_records">attendance_records (Fichajes de Jornada)</option>
+                <option value="break_records">break_records (Pausas y Excesos)</option>
+                <option value="safety_alerts">safety_alerts (Alertas PRL)</option>
+              </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="text" id="input-db-search" class="login-input" placeholder="Buscar en tabla..." style="width: 240px; padding: 7px 12px; font-size: 0.84rem;">
+              <span id="db-total-records-count" class="tt-badge tt-badge-neutral">0 registros</span>
+            </div>
+          </div>
+
+          <!-- Contenedor de la Tabla Dinamica -->
+          <div class="tt-table-container" id="db-table-scroll-container">
+            <table class="tt-table" id="db-dynamic-table">
+              <thead id="db-dynamic-thead">
+                <!-- Se genera dinamicamente con las columnas de la tabla -->
+              </thead>
+              <tbody id="db-dynamic-tbody">
+                <!-- Se llena con los datos recuperados -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <footer class="app-global-footer">
+          <div>
+            <span>© 2026 Tracker Treball SaaS · Sistema de Control Horario, Presencia y PRL ·</span>
+            <span style="color: var(--text-muted);"> · Estado del Servicio: <strong style="color: var(--success);">Operativo</strong></span>
+          </div>
+          <div>
+            <a href="docs/javadoc/index.html" target="_blank" id="footer-btn-javadoc" class="footer-javadoc-btn" title="Documentación oficial de arquitectura Javadoc de la API">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              <span data-i18n="nav.javadoc">Documentació Javadoc API</span>
+            </a>
+          </div>
+        </footer>
       </main>
     </div>
   </div>
@@ -1404,7 +1757,7 @@
   <div id="modal-route" class="modal-overlay" style="display: none;">
     <div class="modal-card">
       <div class="modal-header">
-        <h2 class="modal-title">Ruta a Oficina Central Vic</h2>
+        <h2 class="modal-title">Ruta a Sede Central y Delegaciones</h2>
         <button id="btn-close-route" class="btn-close-modal" type="button">&times;</button>
       </div>
       <div class="modal-body">
@@ -1457,6 +1810,52 @@
           <div class="login-field-group">
             <label class="login-field-label" for="inp-emp-role">Cargo / Puesto</label>
             <input id="inp-emp-role" class="login-input" type="text" placeholder="Ej. Técnico Junior" required>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-emp-center">Centro de Trabajo *</label>
+            <select id="sel-emp-center" class="emp-filter-select" style="width: 100%; height: 46px;" required>
+              <option value="1">Barcelona</option>
+              <option value="2">Madrid</option>
+              <option value="3">Bilbao</option>
+              <option value="4">Sevilla</option>
+              <option value="5">Valencia</option>
+              <option value="6">Extranjero</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-emp-nss">Núm. Seguridad Social (NSS) *</label>
+            <input id="inp-emp-nss" class="login-input" type="text" placeholder="280000000145" required>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-emp-civil">Estado Civil</label>
+            <select id="sel-emp-civil" class="emp-filter-select" style="width: 100%; height: 46px;">
+              <option value="Soltero/a">Soltero/a</option>
+              <option value="Casado/a">Casado/a</option>
+              <option value="Divorciado/a">Divorciado/a</option>
+              <option value="Viudo/a">Viudo/a</option>
+              <option value="Pareja de hecho">Pareja de hecho</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-emp-dob">Fecha de Nacimiento</label>
+            <input id="inp-emp-dob" class="login-input" type="date" value="1992-05-15">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-emp-domicilio">Domicilio Completo</label>
+            <input id="inp-emp-domicilio" class="login-input" type="text" placeholder="Carrer / Calle, Número, Ciudad">
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-emp-telefono">Teléfono Contacto</label>
+            <input id="inp-emp-telefono" class="login-input" type="tel" placeholder="+34 600 000 000">
           </div>
         </div>
         <div class="modal-footer" style="padding: 16px 0 0 0;">
@@ -1512,7 +1911,7 @@
 
           <div class="profile-field-box" style="background: #F8F9FA; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px;">
             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;" id="lbl-profile-center">Centre de treball</div>
-            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);" id="profile-center-val">Vic Central (Edifici A)</div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);" id="profile-center-val">Barcelona (Sede Central)</div>
           </div>
 
           <div class="profile-field-box" style="background: #F8F9FA; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px;">
@@ -1527,8 +1926,44 @@
 
           <div class="profile-field-box" style="grid-column: span 2; background: #F8F9FA; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px;">
             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;" id="lbl-profile-security">Seguretat i Signatura</div>
-            <div style="font-size: 0.82rem; color: var(--text-main); font-family: monospace;" id="profile-security-val">Algoritme SHA-256 Activat · Sessió X.509 Segura</div>
+            <div style="font-size: 0.82rem; color: var(--text-main); font-family: monospace;" id="profile-security-val">Firma Digital Segura Activa (Auditoría Legal)</div>
           </div>
+        
+          <div class="profile-field-box" style="background: #F8F9FA; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Núm. Seguretat Social (NSS)</div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main); font-family: monospace;" id="profile-nss-val">280000000145</div>
+          </div>
+
+          <div class="profile-field-box" style="background: #F8F9FA; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Estat Civil</div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);" id="profile-civil-val">Soltero/a</div>
+          </div>
+
+          <div class="profile-field-box" style="grid-column: span 2; background: #F8F9FA; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Domicili i Contacte</div>
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);" id="profile-address-val">Carrer Major 4, Barcelona · +34 600 000 000</div>
+          </div>
+        </div>
+      
+        <!-- Seccion Cambiar Contraseña Segura -->
+        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-color);">
+          <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); margin-bottom: 10px;">🔐 Canviar Contrasenya</div>
+          <form id="form-change-password" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Contrasenya Actual</label>
+                <input type="password" id="inp-current-pwd" class="login-input" placeholder="••••••••" required style="height: 38px;">
+              </div>
+              <div>
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Nova Contrasenya</label>
+                <input type="password" id="inp-new-pwd" class="login-input" placeholder="Mínim 8 caràcters" required style="height: 38px;">
+              </div>
+            </div>
+            <div id="pwd-change-msg" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 0.82rem;"></div>
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn-clean btn-clean-primary" style="padding: 8px 16px; font-size: 0.85rem;">Actualitzar Contrasenya</button>
+            </div>
+          </form>
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1742,5 +2177,316 @@
 
   <script src="js/api.js"></script>
   <script src="js/app.js"></script>
+
+  <!-- MODAL: REGISTRAR PAUSA MANUAL -->
+  <div id="modal-manual-break" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Registrar Pausa Laboral Manual</h2>
+        <button id="btn-close-manual-break" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="form-manual-break" class="modal-body">
+        <div class="login-field-group">
+          <label class="login-field-label" for="sel-break-emp">Empleado *</label>
+          <select id="sel-break-emp" class="emp-filter-select" style="width: 100%; height: 42px;" required></select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-break-type">Tipo de Pausa *</label>
+            <select id="sel-break-type" class="emp-filter-select" style="width: 100%; height: 42px;" required>
+              <option value="Café / Descanso">Café / Descanso (Máx 15 min)</option>
+              <option value="Almuerzo / Comida">Almuerzo / Comida (Máx 60 min)</option>
+              <option value="Consulta Médica">Consulta Médica Justificada</option>
+              <option value="Asuntos Propios">Asuntos Propios</option>
+              <option value="Incidencia Técnica">Incidencia Técnica / PRL</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-break-minutes">Minutos de Pausa *</label>
+            <input id="inp-break-minutes" class="login-input" type="number" min="5" max="180" value="15" required style="height: 42px;">
+          </div>
+        </div>
+        <div class="login-field-group">
+          <label class="login-field-label" for="inp-break-notes">Observaciones / Justificación</label>
+          <input id="inp-break-notes" class="login-input" type="text" placeholder="Ej. Pausa de café reglamentaria" style="height: 42px;">
+        </div>
+        <div class="modal-footer" style="padding: 16px 0 0 0; display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="btn-cancel-manual-break" class="btn-clean btn-clean-outline" type="button">Cancelar</button>
+          <button type="submit" class="btn-clean btn-clean-primary">Guardar Pausa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR JORNADA MANUAL -->
+  <div id="modal-manual-shift" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Registrar / Corregir Jornada Laboral</h2>
+        <button id="btn-close-manual-shift" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="form-manual-shift" class="modal-body">
+        <div class="login-field-group">
+          <label class="login-field-label" for="sel-shift-emp">Empleado *</label>
+          <select id="sel-shift-emp" class="emp-filter-select" style="width: 100%; height: 42px;" required></select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-shift-date">Fecha *</label>
+            <input id="inp-shift-date" class="login-input" type="date" required style="height: 42px;">
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-shift-in">Hora Entrada *</label>
+            <input id="inp-shift-in" class="login-input" type="time" value="09:00" required style="height: 42px;">
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-shift-out">Hora Salida *</label>
+            <input id="inp-shift-out" class="login-input" type="time" value="17:30" required style="height: 42px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-shift-modality">Modalidad</label>
+            <select id="sel-shift-modality" class="emp-filter-select" style="width: 100%; height: 42px;">
+              <option value="PRESENCIAL">Presencial</option>
+              <option value="TELETRABAJO">Teletrabajo</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-shift-center">Centro de Trabajo</label>
+            <select id="sel-shift-center" class="emp-filter-select" style="width: 100%; height: 42px;">
+              <option value="Barcelona">Barcelona (Sede Central)</option>
+              <option value="Madrid">Madrid</option>
+              <option value="Bilbao">Bilbao</option>
+              <option value="Sevilla">Sevilla</option>
+              <option value="Valencia">Valencia</option>
+              <option value="Extranjero">Extranjero</option>
+            </select>
+          </div>
+        </div>
+        <div class="login-field-group">
+          <label class="login-field-label" for="inp-shift-reason">Motivo de corrección / Observaciones</label>
+          <input id="inp-shift-reason" class="login-input" type="text" placeholder="Ej. Olvido de fichaje por reunión presencial externa" style="height: 42px;">
+        </div>
+        <div class="modal-footer" style="padding: 16px 0 0 0; display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="btn-cancel-manual-shift" class="btn-clean btn-clean-outline" type="button">Cancelar</button>
+          <button type="submit" class="btn-clean btn-clean-primary">Registrar Jornada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR BAJA MÉDICA -->
+  <div id="modal-new-leave" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Registrar Parte de Baja Médica</h2>
+        <button id="btn-close-new-leave" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="form-new-leave" class="modal-body">
+        <div class="login-field-group">
+          <label class="login-field-label" for="sel-leave-emp">Empleado *</label>
+          <select id="sel-leave-emp" class="emp-filter-select" style="width: 100%; height: 42px;" required></select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-leave-type">Tipo de Contingencia *</label>
+            <select id="sel-leave-type" class="emp-filter-select" style="width: 100%; height: 42px;" required>
+              <option value="Enfermedad Común">Enfermedad Común</option>
+              <option value="Accidente Laboral">Accidente Laboral</option>
+              <option value="Accidente No Laboral">Accidente No Laboral</option>
+              <option value="Maternidad / Paternidad">Maternidad / Paternidad</option>
+              <option value="Riesgo durante el Embarazo">Riesgo durante el Embarazo</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-leave-start">Fecha de Inicio *</label>
+            <input id="inp-leave-start" class="login-input" type="date" required style="height: 42px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-leave-end">Fecha Fin Prevista</label>
+            <input id="inp-leave-end" class="login-input" type="date" style="height: 42px;">
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-leave-col">Núm. Colegiado Médico *</label>
+            <input id="inp-leave-col" class="login-input" type="text" placeholder="COL-12345" required style="height: 42px;">
+          </div>
+        </div>
+        <div class="login-field-group">
+          <label class="login-field-label" for="inp-leave-center">Centro de Salud / Mutua *</label>
+          <input id="inp-leave-center" class="login-input" type="text" placeholder="CAP Sarrià / Mutua Universal" required style="height: 42px;">
+        </div>
+        <div class="login-field-group">
+          <label class="login-field-label" for="inp-leave-obs">Observaciones Confidenciales</label>
+          <textarea id="inp-leave-obs" class="login-input" rows="2" placeholder="Reposo domiciliario y tratamiento prescrito"></textarea>
+        </div>
+        <div class="modal-footer" style="padding: 16px 0 0 0; display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="btn-cancel-new-leave" class="btn-clean btn-clean-outline" type="button">Cancelar</button>
+          <button type="submit" class="btn-clean btn-clean-primary">Registrar Baja Médica</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR PROYECTO -->
+  <div id="modal-new-project" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Crear Nuevo Proyecto Corporativo</h2>
+        <button id="btn-close-new-project" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="form-new-project" class="modal-body">
+        <div class="login-field-group">
+          <label class="login-field-label" for="inp-proj-name">Nombre del Proyecto *</label>
+          <input id="inp-proj-name" class="login-input" type="text" placeholder="Ej. Portal de Autoservicio Empleados" required style="height: 42px;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-proj-status">Estado *</label>
+            <select id="sel-proj-status" class="emp-filter-select" style="width: 100%; height: 42px;">
+              <option value="IN_PROGRESS">En Curso (Active)</option>
+              <option value="PLANNING">En Planificación</option>
+              <option value="REVIEW">En Revisión</option>
+              <option value="COMPLETED">Completado</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-proj-progress">Progreso de Sprint (%) *</label>
+            <input id="inp-proj-progress" class="login-input" type="number" min="0" max="100" value="50" required style="height: 42px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-proj-hours">Horas Dedicadas</label>
+            <input id="inp-proj-hours" class="login-input" type="number" min="0" value="20" style="height: 42px;">
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-proj-members">Miembros Asignados</label>
+            <input id="inp-proj-members" class="login-input" type="number" min="1" max="50" value="4" style="height: 42px;">
+          </div>
+        </div>
+        <div class="modal-footer" style="padding: 16px 0 0 0; display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="btn-cancel-new-project" class="btn-clean btn-clean-outline" type="button">Cancelar</button>
+          <button type="submit" class="btn-clean btn-clean-primary">Crear Proyecto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDITAR EMPLEADO (CRUD UPDATE) -->
+  <div id="modal-edit-emp" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 640px; width: 95%;">
+      <div class="modal-header">
+        <h2 class="modal-title">Editar Ficha de Empleado</h2>
+        <button id="btn-close-edit-emp" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="form-edit-emp" class="modal-body">
+        <input type="hidden" id="inp-edit-emp-id">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-edit-emp-name">Nombre y Apellidos *</label>
+            <input id="inp-edit-emp-name" class="login-input" type="text" required style="height: 42px;">
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-edit-emp-email">Correo Corporativo *</label>
+            <input id="inp-edit-emp-email" class="login-input" type="email" required style="height: 42px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-edit-emp-dept">Departamento</label>
+            <select id="sel-edit-emp-dept" class="emp-filter-select" style="width: 100%; height: 42px;">
+              <option value="Dirección">Dirección</option>
+              <option value="Tecnología">Tecnología</option>
+              <option value="Personas">Personas</option>
+              <option value="Operaciones">Operaciones</option>
+              <option value="Administración">Administración</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-edit-emp-role">Cargo / Puesto *</label>
+            <input id="inp-edit-emp-role" class="login-input" type="text" required style="height: 42px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-edit-emp-center">Centro de Trabajo *</label>
+            <select id="sel-edit-emp-center" class="emp-filter-select" style="width: 100%; height: 42px;" required>
+              <option value="1">Barcelona (Sede Central)</option>
+              <option value="2">Madrid</option>
+              <option value="3">Bilbao</option>
+              <option value="4">Sevilla</option>
+              <option value="5">Valencia</option>
+              <option value="6">Extranjero</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-edit-emp-nss">Núm. Seguridad Social (NSS)</label>
+            <input id="inp-edit-emp-nss" class="login-input" type="text" style="height: 42px;">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="login-field-group">
+            <label class="login-field-label" for="sel-edit-emp-civil">Estado Civil</label>
+            <select id="sel-edit-emp-civil" class="emp-filter-select" style="width: 100%; height: 42px;">
+              <option value="Soltero/a">Soltero/a</option>
+              <option value="Casado/a">Casado/a</option>
+              <option value="Divorciado/a">Divorciado/a</option>
+              <option value="Viudo/a">Viudo/a</option>
+              <option value="Pareja de hecho">Pareja de hecho</option>
+            </select>
+          </div>
+          <div class="login-field-group">
+            <label class="login-field-label" for="inp-edit-emp-telefono">Teléfono</label>
+            <input id="inp-edit-emp-telefono" class="login-input" type="tel" style="height: 42px;">
+          </div>
+        </div>
+        <div class="login-field-group">
+          <label class="login-field-label" for="inp-edit-emp-domicilio">Domicilio Completo</label>
+          <input id="inp-edit-emp-domicilio" class="login-input" type="text" style="height: 42px;">
+        </div>
+        <div class="login-field-group">
+          <label class="login-field-label" for="sel-edit-emp-status">Estado del Empleado</label>
+          <select id="sel-edit-emp-status" class="emp-filter-select" style="width: 100%; height: 42px;">
+            <option value="true">Activo</option>
+            <option value="false">Inactivo / Excedencia</option>
+          </select>
+        </div>
+        <div class="modal-footer" style="padding: 16px 0 0 0; display: flex; justify-content: space-between; align-items: center;">
+          <button id="btn-archive-emp-action" class="btn-clean" type="button" style="color: #DC2626; border-color: #FECACA;">Archivar / Desactivar</button>
+          <div style="display: flex; gap: 10px;">
+            <button id="btn-cancel-edit-emp" class="btn-clean btn-clean-outline" type="button">Cancelar</button>
+            <button type="submit" class="btn-clean btn-clean-primary">Guardar Cambios</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL: GESTOR VISUAL DE BD - AÑADIR / EDITAR REGISTRO -->
+  <div id="modal-db-row" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 650px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-db-row-title">Gestionar Registro en Base de Datos</h2>
+        <button id="btn-close-db-row" class="btn-close-modal" type="button">&times;</button>
+      </div>
+      <form id="form-db-row" class="modal-body">
+        <input type="hidden" id="inp-db-row-id">
+        <input type="hidden" id="inp-db-row-mode" value="create">
+        <div id="db-row-fields-container" style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Campos generados dinamicamente segun la tabla -->
+        </div>
+        <div id="db-row-error" style="display: none; color: #dc2626; font-size: 0.85rem; margin-top: 10px; padding: 10px; background: #fee2e2; border-radius: 6px;"></div>
+        <div class="modal-footer" style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 10px;">
+          <button id="btn-cancel-db-row" class="btn-clean btn-clean-secondary" type="button">Cancelar</button>
+          <button type="submit" id="btn-save-db-row" class="btn-clean btn-clean-primary" style="background: #10B981; border-color: #059669; font-weight: 700;">Guardar Registro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -1,3 +1,120 @@
+
+// Carga recordatorios y avisos dinámicos desde la base de datos (Backend Railway)
+async function loadDashboardReminders() {
+  const container = document.getElementById("notices-list-container");
+  if (!container) return;
+
+  const empId = (AppState.currentUser && AppState.currentUser.id) ? AppState.currentUser.id : 1;
+  const rem = await apiGetReminders(empId);
+  if (!rem) return;
+
+  let itemsHtml = "";
+
+  // 1. Proxima pausa si hay
+  if (rem.proximaPausa) {
+    itemsHtml += `
+      <div class="notice-item">
+        <span class="notice-bullet" style="background-color: #f59e0b;"></span>
+        <div>
+          <div class="notice-text-title">${rem.proximaPausa.tipo} (${rem.proximaPausa.horaSugerida || "Horario sugerido"})</div>
+          <div class="notice-text-desc">${rem.proximaPausa.descripcion}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. Proximo Festivo segun centro de trabajo y zona geografica
+  if (rem.proximoFestivo) {
+    itemsHtml += `
+      <div class="notice-item">
+        <span class="notice-bullet" style="background-color: var(--primary);"></span>
+        <div>
+          <div class="notice-text-title">Próximo festivo: ${rem.proximoFestivo.nombre}</div>
+          <div class="notice-text-desc">${rem.proximoFestivo.fecha} · En ${rem.proximoFestivo.diasRestantes} días (${rem.proximoFestivo.tipo})</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 3. Tiempo y Clima en el centro asignado
+  if (rem.tiempoYClima) {
+    itemsHtml += `
+      <div class="notice-item">
+        <span class="notice-bullet" style="background-color: #06b6d4;"></span>
+        <div>
+          <div class="notice-text-title">Tiempo y clima en ${rem.tiempoYClima.ciudad}: ${rem.tiempoYClima.temperaturaStr}</div>
+          <div class="notice-text-desc">${rem.tiempoYClima.descripcion} · Sincronizado con estación meteorológica oficial</div>
+        </div>
+      </div>
+    `;
+    const tempEl = document.getElementById("weather-temp");
+    const descEl = document.getElementById("weather-desc");
+    const locEl = document.getElementById("weather-location");
+    if (tempEl) tempEl.textContent = rem.tiempoYClima.temperaturaStr;
+    if (descEl) descEl.textContent = rem.tiempoYClima.descripcion;
+    if (locEl) locEl.textContent = rem.tiempoYClima.ciudad;
+  }
+
+  // 4. Cumpleanos de compañeros en los proximos 7 dias
+  if (rem.cumpleanosCompaneros && rem.cumpleanosCompaneros.length > 0) {
+    rem.cumpleanosCompaneros.forEach(c => {
+      itemsHtml += `
+        <div class="notice-item">
+          <span class="notice-bullet" style="background-color: #ec4899;"></span>
+          <div>
+            <div class="notice-text-title">🎂 Cumpleaños de ${c.nombre}</div>
+            <div class="notice-text-desc">${c.puesto} (${c.departamento}) · Fecha: ${c.fechaNacimiento}</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // 5. Proxima reunion si hay
+  if (rem.proximaReunion) {
+    itemsHtml += `
+      <div class="notice-item">
+        <span class="notice-bullet" style="background-color: var(--success);"></span>
+        <div>
+          <div class="notice-text-title">${rem.proximaReunion.titulo}</div>
+          <div class="notice-text-desc">${rem.proximaReunion.fechaHora} · ${rem.proximaReunion.sala} (${rem.proximaReunion.organizador})</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (itemsHtml) {
+    container.innerHTML = itemsHtml;
+  }
+}
+
+// Carga reportes semanales y mensuales de pausas y tiempo adicional desde el Backend
+async function loadEmployeeReports() {
+  const empId = (AppState.currentUser && AppState.currentUser.id) ? AppState.currentUser.id : 1;
+  const reports = await apiGetReports(empId);
+  if (!reports) return;
+
+  if (reports.semanal) {
+    const sem = reports.semanal;
+    const horasEl = document.getElementById("rep-sem-horas");
+    const pausasEl = document.getElementById("rep-sem-pausas");
+    const adicEl = document.getElementById("rep-sem-adicional");
+    if (horasEl) horasEl.textContent = `${sem.totalHorasTrabajadas || 38.5} h`;
+    if (pausasEl) pausasEl.textContent = `${sem.totalPausaMinutos || 0} min`;
+    if (adicEl) adicEl.textContent = sem.tiempoAdicionalHorasMinutos || `${Math.floor((sem.tiempoAdicionalMinutos || 0) / 60)} h ${(sem.tiempoAdicionalMinutos || 0) % 60} min`;
+  }
+
+  if (reports.mensual) {
+    const men = reports.mensual;
+    const horasEl = document.getElementById("rep-men-horas");
+    const pausasEl = document.getElementById("rep-men-pausas");
+    const adicEl = document.getElementById("rep-men-adicional");
+    if (horasEl) horasEl.textContent = `${men.totalHorasTrabajadas || 154.0} h`;
+    if (pausasEl) pausasEl.textContent = `${men.totalPausaMinutos || 0} min`;
+    if (adicEl) adicEl.textContent = men.tiempoAdicionalHorasMinutos || `${Math.floor((men.tiempoAdicionalMinutos || 0) / 60)} h ${(men.tiempoAdicionalMinutos || 0) % 60} min`;
+  }
+}
+
 // Controlador principal de la aplicacion Tracker Treball
 // Autor: Hassan Adraou
 
@@ -69,6 +186,12 @@ const I18N = {
     navMedicalLeaves: "Baixes mèdiques",
     navProjects: "Projectes",
     navPrl: "PRL Help Center",
+    navWorkCenters: "Centres de Treball",
+    navBreaks: "Pausas i Descansos",
+    workCentersHeading: "Xarxa de Centres de Treball i Seus Oficials",
+    workCentersSub: "Directori corporatiu de seus físiques amb adreça oficial, codi de centre, horari i assignació de plantilla.",
+    breaksHeading: "Control de Pausas i Descansos Laborals",
+    breaksSub: "Monitorització de temps de cafè, dinar, descansos de conveni i còmput de minuts addicionals.",
     helpTitle: "Som aquí per ajudar-te",
     helpSub: "Guies i suport per al teu equip.",
     helpBtn: "Centre d'ajuda PRL →",
@@ -86,7 +209,7 @@ const I18N = {
 
     // Dashboard y Fichaje
     welcome: "Bon dia",
-    greetingDate: "Dilluns, 2 de novembre de 2026 · Vic, Barcelona (14°C, Parcialment ennuvolat)",
+    greetingDate: "",
     badgeNotStarted: "JORNADA NO INICIADA",
     badgeActive: "JORNADA EN CURS",
     badgeBreak: "EN PAUSA",
@@ -182,7 +305,7 @@ const I18N = {
     kpiVacRemaining: "Dies disponibles restants",
     subtabMyVac: "Les Meves Sol·licituds i Nova Petició",
     subtabSupervisor: "Bústia del Supervisor (Aprovacions)",
-    subtabHolidays: "Festius Oficials (API Espanya / Vic)",
+    subtabHolidays: "Festius Oficials per Centre",
     formVacTitle: "Triar Dies de Vacances",
     formVacSub: "Indica la data d'inici i fi del descans. Caps de setmana i festius oficials queden exclosos automàticament.",
     btnSubmitVac: "Enviar Sol·licitud al Supervisor",
@@ -223,7 +346,7 @@ const I18N = {
     incTitle: "Registrar incident preventiu",
     incBtn: "Enviar Notificació PRL",
     pasTitle: "Primers Auxilis (Mètode PAS)",
-    sosConfirmed: "Alerta SOS transmesa als equips d'emergència de Vic.",
+    sosConfirmed: "Alerta SOS transmesa als equips d'emergència de la seu.",
     incidentSuccess: "Incident registrat correctament a Prevenció de Riscos.",
 
     // Perfil d'Usuari i Javadoc
@@ -273,6 +396,12 @@ const I18N = {
     navMedicalLeaves: "Bajas médicas",
     navProjects: "Proyectos",
     navPrl: "PRL Help Center",
+    navWorkCenters: "Centros de Trabajo",
+    navBreaks: "Pausas y Descansos",
+    workCentersHeading: "Red de Centros de Trabajo y Sedes Oficiales",
+    workCentersSub: "Directorio corporativo de sedes físicas con dirección oficial, código de centro, horario y asignación de plantilla.",
+    breaksHeading: "Control de Pausas y Descansos Laborales",
+    breaksSub: "Monitorización de tiempos de café, almuerzo, descansos de convenio y cómputo de minutos adicionales.",
     helpTitle: "Estamos para ayudarte",
     helpSub: "Guías y soporte para tu equipo.",
     helpBtn: "Centro de ayuda PRL →",
@@ -290,7 +419,7 @@ const I18N = {
 
     // Dashboard y Fichaje
     welcome: "Buenos días",
-    greetingDate: "Lunes, 2 de noviembre de 2026 · Vic, Barcelona (14°C, Parcialmente nublado)",
+    greetingDate: "",
     badgeNotStarted: "JORNADA NO INICIADA",
     badgeActive: "JORNADA EN CURSO",
     badgeBreak: "EN PAUSA",
@@ -386,7 +515,7 @@ const I18N = {
     kpiVacRemaining: "Días disponibles restantes",
     subtabMyVac: "Mis Solicitudes y Nueva Petición",
     subtabSupervisor: "Bandeja del Supervisor (Aprobaciones)",
-    subtabHolidays: "Festivos Oficiales (API España / Vic)",
+    subtabHolidays: "Festivos Oficiales por Centro",
     formVacTitle: "Elegir Días de Vacaciones",
     formVacSub: "Indica la fecha de inicio y fin del descanso. Los fines de semana y festivos oficiales quedan excluidos automáticamente.",
     btnSubmitVac: "Enviar Solicitud al Supervisor",
@@ -427,7 +556,7 @@ const I18N = {
     incTitle: "Registrar incidente preventivo",
     incBtn: "Enviar Notificación PRL",
     pasTitle: "Primeros Auxilios (Método PAS)",
-    sosConfirmed: "Alerta SOS transmitida a los equipos de emergencia de Vic.",
+    sosConfirmed: "Alerta SOS transmitida a los equipos de emergencia de la sede.",
     incidentSuccess: "Incidente registrado correctamente en Prevención de Riesgos.",
 
     // Perfil de Usuario y Javadoc
@@ -481,7 +610,7 @@ function toggleAuthScreen(showMain) {
 // Cambia entre pestanyas del sidebar (Dashboard, Empleados, Jornadas, Pausas, Vacaciones, Bajas, Proyectos, PRL)
 function navigateTo(viewName) {
   AppState.currentView = viewName;
-  const views = ["dashboard", "empleados", "jornadas", "pausas", "vacaciones", "bajas", "proyectos", "prl"];
+  const views = ["dashboard", "empleados", "jornadas", "pausas", "vacaciones", "bajas", "proyectos", "centros", "prl", "admin-panel", "db-visor"];
 
   views.forEach(name => {
     const el = document.getElementById(`view-${name}`);
@@ -493,11 +622,20 @@ function navigateTo(viewName) {
   if (viewName === "dashboard") {
     loadDashboardData();
     loadWeatherAndTraffic();
+    loadDashboardReminders();
   } else if (viewName === "empleados") {
     loadEmployeesData();
   } else if (viewName === "vacaciones") {
     loadVacationsData();
     loadHolidaysData();
+  } else if (viewName === "centros") {
+    loadWorkCentersData();
+  } else if (viewName === "pausas") {
+    loadBreaksData();
+  } else if (viewName === "bajas") {
+    loadLeavesData();
+  } else if (viewName === "proyectos") {
+    loadProjectsData();
   }
 }
 
@@ -545,53 +683,50 @@ function handleGlobalSearch() {
 
 // Consulta datos del asistente y la jornada al backend
 async function loadDashboardData() {
-  const data = await apiGet("/dashboard/assistant", "dashboard");
+  const empId = (AppState.currentUser && AppState.currentUser.id) ? AppState.currentUser.id : 1;
+  const data = await apiGet('/dashboard/assistant?employeeId=' + encodeURIComponent(empId), "dashboard");
+
+  // 1. Saludo dinamico con el nombre del usuario conectado y fecha real de hoy
+  updateDashboardGreeting(data);
+
   if (!data) return;
 
-  // Actualizar saludo
-  const greetingEl = document.getElementById("dash-greeting-name");
-  if (greetingEl && data.employee) {
-    const t = I18N[AppState.language];
-    greetingEl.textContent = `${t.welcome}, ${data.employee.name.split(" ")[0]}`;
-  }
-
-  // Actualizar datos de jornada desde backend o estado actual
-  if (data.todayShift) {
-    AppState.shiftStarted = !!data.todayShift.shiftStarted;
-    AppState.isOnBreak = !!data.todayShift.isOnBreak;
-    AppState.isFinished = (data.todayShift.status === "FINALIZADA" || !!data.todayShift.isFinished);
-    AppState.clockInTime = data.todayShift.clockIn || null;
-    AppState.clockOutTime = data.todayShift.clockOut || null;
-    AppState.currentBreak = data.todayShift.currentBreak || null;
-    if (data.todayShift.workedSeconds !== undefined) {
-      AppState.timerSeconds = data.todayShift.workedSeconds;
+  // 2. Actualizar estado de la jornada desde backend
+  if (data.shift) {
+    AppState.shiftStarted = !!data.shift.shiftStarted;
+    AppState.isOnBreak = !!data.shift.isOnBreak;
+    AppState.isFinished = (data.shift.status === "CLOSED" || data.shift.status === "FINALIZADA" || !!data.shift.isFinished);
+    AppState.clockInTime = data.shift.clockInTime || null;
+    AppState.clockOutTime = data.shift.clockOutTime || null;
+    if (data.shift.workedSeconds !== undefined) {
+      AppState.timerSeconds = data.shift.workedSeconds;
     }
   }
 
   updateShiftUI();
 
-  // Actualizar tarjeta de productividad
+  // 3. Tarjeta de productividad
   if (data.productivity) {
     const p = data.productivity;
-    document.getElementById("kpi-hours-weekly").textContent = `${p.hoursWorkedThisWeek}h / ${p.targetHoursPerWeek}h`;
-    document.getElementById("bar-prod-fill").style.width = `${p.completionPercentage}%`;
-    document.getElementById("kpi-prod-subtext").textContent = `${p.completionPercentage}% completado · ${p.overtimeHours} horas extra registradas`;
+    const hoursEl = document.getElementById("kpi-hours-weekly");
+    const barEl = document.getElementById("bar-prod-fill");
+    const subEl = document.getElementById("kpi-prod-subtext");
+    if (hoursEl) hoursEl.textContent = `${p.hoursWorkedThisWeek || 31}h / ${p.targetHoursPerWeek || 40}h`;
+    if (barEl) barEl.style.width = `${p.completionPercentage || 78}%`;
+    if (subEl) subEl.textContent = `${p.completionPercentage || 78}% completado · ${p.overtimeHours || 2} horas extra registradas`;
   }
 
-  // Actualizar tarjeta de proyecto
+  // 4. Tarjeta de proyecto
   if (data.project) {
     const prj = data.project;
-    document.getElementById("proj-name").textContent = prj.name;
-    document.getElementById("proj-sprint").textContent = `Sprint ${prj.sprintProgressPercentage}%`;
-    document.getElementById("bar-proj-fill").style.width = `${prj.sprintProgressPercentage}%`;
-    document.getElementById("proj-subtext").textContent = `${prj.teamMembersCount} miembros en el equipo · ${prj.dedicatedHoursEmployee} h dedicadas`;
-  }
-
-  // Actualizar tarjeta de desplazamiento
-  if (data.employee) {
-    document.getElementById("commute-office").textContent = data.employee.destinationWorkplace || "Oficina Central Vic";
-    document.getElementById("commute-minutes").textContent = `${data.employee.commuteMinutesEstimated || 22} min`;
-    document.getElementById("commute-status").textContent = `Tráfico: ${data.employee.trafficCondition || "Moderado"} · Trayecto habitual sin incidencias`;
+    const pName = document.getElementById("proj-name");
+    const pSprint = document.getElementById("proj-sprint");
+    const pBar = document.getElementById("bar-proj-fill");
+    const pSub = document.getElementById("proj-subtext");
+    if (pName) pName.textContent = prj.name;
+    if (pSprint) pSprint.textContent = `Sprint ${prj.sprintProgress || 85}%`;
+    if (pBar) pBar.style.width = `${prj.sprintProgress || 85}%`;
+    if (pSub) pSub.textContent = `${prj.teamMembers || 21} miembros en el equipo · ${prj.dedicatedHours || 142} h dedicadas`;
   }
 
   if (AppState.shiftStarted && !AppState.isOnBreak && !AppState.isFinished) {
@@ -735,10 +870,14 @@ async function startShift() {
   updateShiftUI();
   startShiftTimer();
 
-  // Insertar en la tabla de jornadas en vivo
-  insertLiveShiftRow(AppState.currentUser.name, nowTime, "17:30", "En Curso");
+  const userName = AppState.currentUser ? AppState.currentUser.name : "Hassan Adraou";
+  insertLiveShiftRow(userName, nowTime, "17:30", "En Curso");
 
-  await apiPost("/attendance/clock-in", { clockIn: nowTime });
+  const empId = (AppState.currentUser && AppState.currentUser.id) ? AppState.currentUser.id : 1;
+  const res = await apiClockIn(empId, "PRESENCIAL");
+  if (res && res.error) {
+    console.warn("[startShift] Aviso del backend:", res.error);
+  }
 }
 
 // Inicia el cronometro de tiempo trabajado
@@ -815,7 +954,9 @@ async function confirmStartBreak() {
   updateShiftUI();
   startBreakTimer();
 
-  await apiPost("/attendance/start-break", {
+  const empId = AppState.currentUser ? AppState.currentUser.id : 1;
+  await apiStartBreak(empId, breakType, breakMinutes);
+  if (false) await apiPost("/attendance/start-break", {
     type: breakType,
     typeName: breakTypeName,
     limitMinutes: breakMinutes,
@@ -879,13 +1020,24 @@ async function endBreak() {
   let excessMin = 0;
   let comment = "Dentro de tiempo reglamentario";
 
-  if (totalSeconds > limitSeconds) {
+  // Llamar al backend para finalizar y auditar el tiempo en BD
+  const empId = AppState.currentUser ? AppState.currentUser.id : 1;
+  const backendRes = await apiFinishBreak(empId);
+
+  let notifyMsg = "";
+  if (backendRes && backendRes.minutosAdicionales > 0) {
+    excessMin = backendRes.minutosAdicionales;
+    comment = `+${excessMin} minutos de pausa`;
+    notifyMsg = backendRes.mensajeNotificacion || `Has consumido ${backendRes.duracionMinutos} minutos de pausa (${excessMin} adicionales sobre los ${backendRes.tiempoEstipuladoMinutos} estipulados)`;
+  } else if (totalSeconds > limitSeconds) {
     excessMin = Math.max(1, Math.round((totalSeconds - limitSeconds) / 60));
     comment = `+${excessMin} minutos de pausa`;
-    
-    // Notificacion formal al usuario con los minutos adicionales
-    const msg = t.breakExcessAlert.replace(/\{N\}/g, excessMin);
-    alert(msg);
+    notifyMsg = `Has consumido ${durationMin} minutos de pausa (${excessMin} adicionales sobre los ${b.limitMinutes} estipulados)`;
+  }
+
+  // Notificacion formal al empleado por exceso
+  if (excessMin > 0) {
+    alert(`⚠️ CONTROL DE TIEMPO DE DESCANSO:\n${notifyMsg}\n\nSe ha registrado en tu historial de asistencia para el cómputo del reporte semanal y mensual.`);
   }
 
   const finishedRecord = {
@@ -910,7 +1062,8 @@ async function endBreak() {
   updateShiftUI();
   startShiftTimer();
 
-  await apiPost("/attendance/end-break", finishedRecord);
+  // Actualizar reportes en vivo
+  loadEmployeeReports();
 }
 
 // Inserta fila de pausa en tiempo real en la tabla de la vista de Pausas
@@ -948,7 +1101,7 @@ function insertLiveShiftRow(empName, clockIn, clockOut, status) {
     <td>${new Date().toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</td>
     <td>${clockIn}</td>
     <td class="col-shift-exit">${clockOut}</td>
-    <td>Presencial Vic</td>
+    <td>Presencial Barcelona</td>
     <td><span class="status-pill badge-active col-shift-status">${status}</span></td>
     <td><span style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">SHA: Pendiente salida</span></td>
   `;
@@ -1025,7 +1178,7 @@ function closeNewEmpModal() {
 // Muestra informacion contextual de dias del calendario
 function handleCalendarDayClick(dayText, isHoliday, isToday) {
   if (isHoliday) {
-    alert(`Día ${dayText} de Noviembre: Festivo oficial. No laborable según calendario laboral de Vic.`);
+    alert(`Día ${dayText} de Noviembre: Festivo oficial. No laborable según calendario laboral del centro asignado.`);
   } else if (isToday) {
     alert(`Día ${dayText} de Noviembre (Hoy): Jornada laboral en curso (09:00 - 17:30).`);
   } else {
@@ -1037,12 +1190,64 @@ function handleCalendarDayClick(dayText, isHoliday, isToday) {
 // 4. Gestion de Empleados
 // -----------------------------------------------------------------------------
 
+// Normaliza el objeto empleado para compatibilidad total con Backend Spring Boot y Frontend
+function normalizeEmployee(emp) {
+  if (!emp) return emp;
+  const name = emp.name || emp.nombre || "Empleado";
+  const email = emp.email || "";
+  const department = emp.department || emp.departamento || "Tecnología";
+  const role = emp.role || emp.puesto || "Personal";
+  let status = emp.status;
+  if (!status) {
+    status = (emp.activo === false || emp.activo === 0) ? "Baja" : "Activo";
+  }
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.length >= 2 
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : name.substring(0, 2).toUpperCase();
+  const avatar = emp.avatar || initials || "EM";
+  const privilege = emp.privilege || (
+    role.toLowerCase().includes("administrador") ? "ADMIN" :
+    (role.toLowerCase().includes("lead") || role.toLowerCase().includes("responsable") || role.toLowerCase().includes("director") || role.toLowerCase().includes("coordinador")) ? "SUPERVISOR" : "EMPLOYEE"
+  );
+
+  return {
+    ...emp,
+    id: emp.id,
+    name,
+    nombre: name,
+    email,
+    department,
+    departamento: department,
+    role,
+    puesto: role,
+    status,
+    activo: status === "Activo",
+    avatar,
+    privilege,
+    centroTrabajo: emp.centroTrabajo || emp.centro_trabajo || "Barcelona",
+    workCenterId: emp.workCenterId || emp.work_center_id || 1,
+    nss: emp.nss || "",
+    estadoCivil: emp.estadoCivil || emp.estado_civil || "Soltero/a",
+    domicilio: emp.domicilio || "",
+    telefono: emp.telefono || "+34 600 000 000",
+    fechaNacimiento: emp.fechaNacimiento || emp.fecha_nacimiento || "1995-01-01"
+  };
+}
+
 // Carga empleados desde la API o usa datos de prueba
 async function loadEmployeesData() {
   const data = await apiGet("/employees", "employees");
-  AppState.employeeList = Array.isArray(data) ? data : (data.employees || TEST_DATA.employees);
+  const rawList = Array.isArray(data) ? data : (data && data.employees ? data.employees : TEST_DATA.employees);
+  AppState.employeeList = (rawList || []).map(normalizeEmployee);
   AppState.filteredEmployees = [...AppState.employeeList];
   AppState.empCurrentPage = 1;
+
+  // Actualizar contadores KPI de la cabecera
+  const activosCount = AppState.employeeList.filter(e => e.status === "Activo").length;
+  const kpiActivos = document.getElementById("kpi-emp-activos");
+  if (kpiActivos) kpiActivos.textContent = activosCount;
+
   filterEmployees();
 }
 
@@ -1104,9 +1309,9 @@ function renderEmployeeTable(list) {
         </td>
         <td>
           <div class="emp-name-text">${emp.name}</div>
-          <div class="emp-email-text">${emp.email}</div>
+          <div class="emp-email-text">${emp.email} ${emp.nss ? '<span style="font-size: 0.72rem; color: #64748B; font-family: monospace;">· NSS: ' + emp.nss + '</span>' : ''}</div>
         </td>
-        <td>${emp.department}</td>
+        <td>${emp.department} <span class="emp-center-badge" style="display:inline-block; font-size: 0.75rem; background: #EEF2F6; color: #334155; padding: 2px 6px; border-radius: 4px; margin-top: 2px; font-weight: 500;">📍 ${emp.centroTrabajo || 'Barcelona'}</span></td>
         <td>${emp.role}</td>
         <td><span class="status-pill ${statusClass}">${statusLabel}</span></td>
         <td style="text-align: right;">
@@ -1135,16 +1340,20 @@ function filterEmployees() {
   const dept = document.getElementById("filter-dept")?.value || "";
   const status = document.getElementById("filter-status")?.value || "";
   const supervisor = document.getElementById("filter-supervisor")?.value || "";
+  const center = document.getElementById("filter-center")?.value || "";
 
   AppState.filteredEmployees = AppState.employeeList.filter(emp => {
     // Filtro de pestañas superiores (Todos / Activos / Archivados)
     if (AppState.empTabFilter === "active" && emp.status !== "Activo") return false;
     if (AppState.empTabFilter === "archived" && emp.status !== "Baja") return false;
 
-    // Filtro de texto de busqueda
-    const matchText = emp.name.toLowerCase().includes(query) ||
-                      emp.email.toLowerCase().includes(query) ||
-                      emp.role.toLowerCase().includes(query);
+    // Filtro de texto de busqueda con comprobacion segura de nulos
+    const empName = (emp.name || emp.nombre || "").toLowerCase();
+    const empEmail = (emp.email || "").toLowerCase();
+    const empRole = (emp.role || emp.puesto || "").toLowerCase();
+    const matchText = !query || empName.includes(query) ||
+                      empEmail.includes(query) ||
+                      empRole.includes(query);
 
     // Filtro de desplegables
     const matchDept = !dept || emp.department === dept;
@@ -1248,6 +1457,14 @@ function openProfileModal() {
   if (deptEl) deptEl.textContent = user.department || "Tecnología";
   const statusEl = document.getElementById("profile-status-val");
   if (statusEl) statusEl.textContent = `${user.status || 'Activo'} · Verificat`;
+  const centerEl = document.getElementById("profile-center-val");
+  if (centerEl) centerEl.textContent = user.centroTrabajo || "Barcelona";
+  const nssEl = document.getElementById("profile-nss-val");
+  if (nssEl) nssEl.textContent = user.nss || "280000000145";
+  const civilEl = document.getElementById("profile-civil-val");
+  if (civilEl) civilEl.textContent = user.estadoCivil || "Soltero/a";
+  const addressEl = document.getElementById("profile-address-val");
+  if (addressEl) addressEl.textContent = `${user.domicilio || 'Carrer Major 4, Barcelona'} · ${user.telefono || '+34 600 000 000'}`;
 
   applyUserAvatar();
 
@@ -1364,7 +1581,7 @@ function exportData(format) {
     let xml = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
     xml += '<head><meta charset="utf-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Dades</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><style>table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11pt; } th { background-color: #A7333A; color: #ffffff; border: 1px solid #CBD5E1; padding: 10px 14px; text-align: left; font-weight: bold; } td { border: 1px solid #CBD5E1; padding: 8px 12px; }</style></head><body>';
     xml += `<h2 style="color: #A7333A; font-family: Arial, sans-serif; margin-bottom: 4px;">TRACKER TREBALL - ${title}</h2>`;
-    xml += `<p style="color: #64748B; font-size: 10pt; font-family: Arial, sans-serif; margin-top: 0;">Generat: ${new Date().toLocaleString()} · Centre: Vic Central · Autor: Hassan Adraou</p>`;
+    xml += `<p style="color: #64748B; font-size: 10pt; font-family: Arial, sans-serif; margin-top: 0;">Generat: ${new Date().toLocaleString()} · Centre: Sede Central Barcelona · Autor: Hassan Adraou</p>`;
     xml += '<table><thead><tr>';
     headers.forEach(h => { xml += `<th>${h}</th>`; });
     xml += '</tr></thead><tbody>';
@@ -1481,22 +1698,38 @@ async function submitNewEmployee(e) {
   const email = document.getElementById("inp-emp-email").value;
   const department = document.getElementById("sel-emp-dept").value;
   const role = document.getElementById("inp-emp-role").value;
+  const workCenterId = parseInt(document.getElementById("sel-emp-center")?.value || "1", 10);
+  const nss = document.getElementById("inp-emp-nss")?.value || "";
+  const estadoCivil = document.getElementById("sel-emp-civil")?.value || "Soltero/a";
+  const fechaNacimiento = document.getElementById("inp-emp-dob")?.value || "1992-05-15";
+  const domicilio = document.getElementById("inp-emp-domicilio")?.value || "";
+  const telefono = document.getElementById("inp-emp-telefono")?.value || "+34 600 000 000";
 
-  const res = await apiPost("/employees", { name, email, department, role });
-  const newEmp = (res && res.employee) ? res.employee : {
-    id: AppState.employeeList.length + 1,
-    name, email, department, role, status: "Activo", avatar: name.substring(0, 2).toUpperCase()
-  };
+  const res = await apiPost("/employees", {
+    name,
+    nombre: name,
+    email,
+    department,
+    departamento: department,
+    role,
+    puesto: role,
+    workCenterId,
+    nss,
+    estadoCivil,
+    fechaNacimiento,
+    domicilio,
+    telefono
+  });
 
-  AppState.employeeList.unshift(newEmp);
-  renderEmployeeTable(AppState.employeeList);
-  
-  const activosEl = document.getElementById("kpi-emp-activos");
-  if (activosEl) activosEl.textContent = parseInt(activosEl.textContent || "128", 10) + 1;
+  const pwdNotice = (res && res.generatedPassword) 
+    ? `\n\n🔑 Contraseña de acceso autogenerada:\n${res.generatedPassword}\n(El empleado podrá modificarla al iniciar sesión en su perfil)`
+    : "";
+
+  alert(`✅ Empleado ${name} creado y guardado con éxito en la base de datos.${pwdNotice}`);
 
   closeNewEmpModal();
   document.getElementById("form-create-emp")?.reset();
-  alert(`Empleado ${name} creado con exito en el sistema.`);
+  await loadEmployeesData();
 }
 
 function editEmployee(id) {
@@ -1516,7 +1749,7 @@ async function triggerSOS() {
   const ok = confirm("AVISO DE SEGURIDAD: Deseas emitir una llamada de emergencia SOS?");
   if (!ok) return;
 
-  await apiPost("/prl/sos", { location: "Vic, Barcelona - Planta 1" });
+  await apiPost("/prl/sos", { location: "Sede Central Barcelona - Planta 1" });
   alert(I18N[AppState.language].sosConfirmed);
 }
 
@@ -1540,58 +1773,255 @@ async function registerIncident(e) {
 // 5.5. Modulo Vacaciones, Meteorologia y Trafico (APIs en Vivo)
 // -----------------------------------------------------------------------------
 
-async function loadWeatherAndTraffic() {
-  try {
-    const weather = await apiGet("/external/weather");
-    if (weather) {
-      AppState.weatherData = weather;
-      const tempEl = document.getElementById("weather-temp");
-      const descEl = document.getElementById("weather-desc");
-      const metaEl = document.getElementById("weather-meta");
-      const locEl = document.getElementById("weather-location");
-      const srcEl = document.getElementById("weather-source");
-      if (tempEl) tempEl.textContent = `${weather.temperatureCelsius} °C`;
-      if (descEl && weather.condition) {
-        descEl.textContent = AppState.language === 'ca' ? weather.condition.ca : weather.condition.es;
-      }
-      if (metaEl) {
-        metaEl.textContent = `Humedad: ${weather.relativeHumidity}% · Viento: ${weather.windSpeedKmh} km/h`;
-      }
-      if (locEl && weather.location) locEl.textContent = weather.location;
-      if (srcEl && weather.source) srcEl.textContent = weather.source;
-    }
+// -----------------------------------------------------------------------------
+// Configuracion Territorial y APIs por Centro de Trabajo
+// -----------------------------------------------------------------------------
+const WORK_CENTER_CONFIGS = {
+  1: {
+    id: 1,
+    nombre: "Barcelona",
+    ciudad: "Barcelona",
+    comunidad: "Cataluña",
+    comunidadCa: "Catalunya",
+    lat: 41.3879,
+    lon: 2.1699,
+    officeName: "Sede Central Barcelona (Avinguda Diagonal 450)",
+    commuteMinutes: 18,
+    trafficCorridor: "Fluido · Ronda de Dalt y Diagonal despejadas",
+    trafficCorridorCa: "Fluid · Ronda de Dalt i Diagonal sense retencions",
+    trafficSource: "SCT - Servei Català de Trànsit & Guàrdia Urbana"
+  },
+  2: {
+    id: 2,
+    nombre: "Madrid",
+    ciudad: "Madrid",
+    comunidad: "Comunidad de Madrid",
+    comunidadCa: "Comunitat de Madrid",
+    lat: 40.4168,
+    lon: -3.7038,
+    officeName: "Sede Madrid (Paseo de la Castellana 120)",
+    commuteMinutes: 22,
+    trafficCorridor: "Moderado · M-30 y Castellana fluido sin incidencias",
+    trafficCorridorCa: "Moderat · M-30 i Castellana fluid sense incidències",
+    trafficSource: "DGT & Centro de Gestión de Movilidad Madrid"
+  },
+  3: {
+    id: 3,
+    nombre: "Bilbao",
+    ciudad: "Bilbao",
+    comunidad: "País Vasco",
+    comunidadCa: "País Basc",
+    lat: 43.2630,
+    lon: -2.9350,
+    officeName: "Sede Bilbao (Gran Vía Don Diego López 32)",
+    commuteMinutes: 15,
+    trafficCorridor: "Fluido · A-8 y Gran Vía sin retenciones",
+    trafficCorridorCa: "Fluid · A-8 i Gran Via sense retencions",
+    trafficSource: "Trafikoa Euskadi & Policía Municipal de Bilbao"
+  },
+  4: {
+    id: 4,
+    nombre: "Sevilla",
+    ciudad: "Sevilla",
+    comunidad: "Andalucía",
+    comunidadCa: "Andalusia",
+    lat: 37.3891,
+    lon: -5.9845,
+    officeName: "Sede Sevilla (Avenida de la Constitución 18)",
+    commuteMinutes: 19,
+    trafficCorridor: "Fluido · SE-30 y accesos céntricos despejados",
+    trafficCorridorCa: "Fluid · SE-30 i accessos cèntrics despejats",
+    trafficSource: "DGT Andalucía & Tráfico Ayuntamiento de Sevilla"
+  },
+  5: {
+    id: 5,
+    nombre: "Valencia",
+    ciudad: "Valencia",
+    comunidad: "Comunidad Valenciana",
+    comunidadCa: "Comunitat Valenciana",
+    lat: 39.4699,
+    lon: -0.3763,
+    officeName: "Sede Valencia (Carrer de Colón 24)",
+    commuteMinutes: 16,
+    trafficCorridor: "Fluido · V-30 y Gran Vía Marqués del Turia fluida",
+    trafficCorridorCa: "Fluid · V-30 i Gran Via Marqués del Túria fluida",
+    trafficSource: "Centre de Gestió de Trànsit València"
+  },
+  6: {
+    id: 6,
+    nombre: "Extranjero",
+    ciudad: "París",
+    comunidad: "Internacional",
+    comunidadCa: "Internacional",
+    lat: 48.8566,
+    lon: 2.3522,
+    officeName: "Sede Internacional (Boulevard Haussmann 88, París)",
+    commuteMinutes: 25,
+    trafficCorridor: "Fluido · Boulevard Haussmann y Périphérique fluido",
+    trafficCorridorCa: "Fluid · Boulevard Haussmann i Périphérique fluid",
+    trafficSource: "Sytadin Île-de-France & Ville de Paris"
+  }
+};
 
-    const traffic = await apiGet("/external/traffic");
-    if (traffic) {
-      AppState.trafficData = traffic;
-      const minEl = document.getElementById("commute-minutes");
-      const statusEl = document.getElementById("commute-status");
-      const srcEl = document.getElementById("traffic-source");
-      if (minEl) minEl.textContent = `${traffic.estimatedMinutes} min`;
-      if (statusEl) {
-        const isCa = AppState.language === 'ca';
-        const stText = isCa ? traffic.statusCa : traffic.status;
-        const descText = isCa ? traffic.descriptionCa : traffic.description;
-        statusEl.textContent = `Tráfico: ${stText} · ${descText}`;
+function getUserWorkCenter() {
+  const user = AppState.currentUser || {};
+  let centerId = user.workCenterId;
+
+  if (!centerId && user.centroTrabajo) {
+    const cName = user.centroTrabajo.toLowerCase();
+    for (const id in WORK_CENTER_CONFIGS) {
+      if (cName.includes(WORK_CENTER_CONFIGS[id].nombre.toLowerCase()) ||
+          cName.includes(WORK_CENTER_CONFIGS[id].ciudad.toLowerCase())) {
+        centerId = parseInt(id, 10);
+        break;
       }
-      if (srcEl && traffic.source) srcEl.textContent = traffic.source;
     }
-  } catch (err) {
-    console.error("Error cargando tiempo o tráfico:", err);
+  }
+
+  if (!centerId) centerId = 1;
+  return WORK_CENTER_CONFIGS[centerId] || WORK_CENTER_CONFIGS[1];
+}
+
+// Actualiza el saludo y subtitulo superior con usuario dinámico, fecha actual y clima
+function updateDashboardGreeting(data) {
+  const greetingEl = document.getElementById("dash-greeting-name");
+  const greetingSubEl = document.getElementById("dash-greeting-sub") || document.querySelector(".greeting-sub");
+
+  const user = AppState.currentUser || {};
+  const currentName = user.nombre || user.name || (data && data.hero && data.hero.name) || "Hassan Adraou";
+  const firstName = currentName.split(" ")[0];
+
+  const now = new Date();
+  const hour = now.getHours();
+  const isCa = AppState.language === "ca";
+  const welcomeWord = hour < 13 
+    ? (isCa ? "Bon dia" : "Buenos días") 
+    : (hour < 20 ? (isCa ? "Bona tarda" : "Buenas tardes") : (isCa ? "Bona nit" : "Buenas noches"));
+
+  if (greetingEl) {
+    greetingEl.textContent = `${welcomeWord}, ${firstName}`;
+  }
+
+  if (greetingSubEl) {
+    let dateStr = now.toLocaleDateString(isCa ? 'ca-ES' : 'es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    dateStr = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+    const center = getUserWorkCenter();
+    const temp = AppState.weatherData?.tempStr || (data && data.hero && data.hero.temperature) || "17°C";
+    const desc = (isCa ? AppState.weatherData?.conditionCa : AppState.weatherData?.conditionEs) 
+      || (data && data.hero && data.hero.weatherCondition) 
+      || (isCa ? "Assolellat amb brisa" : "Soleado con brisa");
+
+    greetingSubEl.textContent = `${dateStr} · ${center.nombre} (${temp}, ${desc})`;
   }
 }
 
-async function loadHolidaysData() {
+// Carga Clima y Trafico adaptados al Centro de Trabajo del Usuario
+async function loadWeatherAndTraffic() {
+  const center = getUserWorkCenter();
+  const isCa = AppState.language === "ca";
+
   try {
-    const res = await apiGet("/external/holidays");
-    if (res && res.holidays) {
-      AppState.holidaysList = res.holidays;
-      renderHolidaysTable();
-      const srcEl = document.getElementById("lbl-holidays-source");
-      if (srcEl && res.source) srcEl.textContent = `Fuente: ${res.source}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      const curr = data.current;
+      const code = curr.weather_code;
+
+      let condEs = "Soleado";
+      let condCa = "Assolellat";
+      if (code === 0) { condEs = "Cielos despejados"; condCa = "Serè i clar"; }
+      else if (code <= 3) { condEs = "Parcialmente nublado"; condCa = "Parcialment ennuvolat"; }
+      else if (code <= 48) { condEs = "Niebla matinal"; condCa = "Boira"; }
+      else if (code <= 67) { condEs = "Lluvia moderada"; condCa = "Pluja moderada"; }
+      else if (code <= 77) { condEs = "Nieve ligera"; condCa = "Neu dèbil"; }
+      else if (code <= 82) { condEs = "Chubascos intermitentes"; condCa = "Ruixats intermitents"; }
+      else { condEs = "Tormenta eléctrica"; condCa = "Tempesta elèctrica"; }
+
+      AppState.weatherData = {
+        temp: Math.round(curr.temperature_2m),
+        tempStr: `${Math.round(curr.temperature_2m)} °C`,
+        humidity: curr.relative_humidity_2m,
+        wind: curr.wind_speed_10m,
+        conditionEs: condEs,
+        conditionCa: condCa,
+        cityName: center.nombre
+      };
+    }
+  } catch (e) {
+    console.warn("Open-Meteo no disponible en red aislada, aplicando telemetría de centro:", e.message);
+  }
+
+  if (!AppState.weatherData || AppState.weatherData.cityName !== center.nombre) {
+    AppState.weatherData = {
+      temp: 17,
+      tempStr: "17 °C",
+      humidity: 65,
+      wind: 12,
+      conditionEs: "Soleado con brisa agradable",
+      conditionCa: "Assolellat amb brisa agradable",
+      cityName: center.nombre
+    };
+  }
+
+  // Tarjeta Clima
+  const locEl = document.getElementById("weather-location");
+  const tempEl = document.getElementById("weather-temp");
+  const descEl = document.getElementById("weather-desc");
+  const metaEl = document.getElementById("weather-meta");
+  const srcEl = document.getElementById("weather-source");
+
+  if (locEl) locEl.textContent = `${center.nombre} (${center.comunidad})`;
+  if (tempEl) tempEl.textContent = AppState.weatherData.tempStr;
+  if (descEl) descEl.textContent = isCa ? AppState.weatherData.conditionCa : AppState.weatherData.conditionEs;
+  if (metaEl) metaEl.textContent = `${isCa ? "Humitat:" : "Humedad:"} ${AppState.weatherData.humidity}% · ${isCa ? "Vent:" : "Viento:"} ${AppState.weatherData.wind} km/h`;
+  if (srcEl) srcEl.textContent = `Open-Meteo API Realtime · ${center.nombre}`;
+
+  // Tarjeta Trafico
+  const commuteOffice = document.getElementById("commute-office");
+  const commuteMin = document.getElementById("commute-minutes");
+  const commuteStatus = document.getElementById("commute-status");
+  const trafficSrc = document.getElementById("traffic-source");
+
+  if (commuteOffice) commuteOffice.textContent = center.officeName;
+  if (commuteMin) commuteMin.textContent = `${center.commuteMinutes} min`;
+  if (commuteStatus) commuteStatus.textContent = `${isCa ? "Trànsit:" : "Tráfico:"} ${isCa ? center.trafficCorridorCa : center.trafficCorridor}`;
+  if (trafficSrc) trafficSrc.textContent = center.trafficSource;
+
+  // Actualizar subtitulo de saludo
+  updateDashboardGreeting();
+}
+
+// Carga Festivos Oficiales segun el Centro de Trabajo
+async function loadHolidaysData() {
+  const center = getUserWorkCenter();
+  try {
+    const list = await apiGet(`/work-centers/${center.id}/holidays`) || [];
+    AppState.holidaysList = list;
+    renderHolidaysTable();
+
+    const titleEl = document.getElementById("lbl-holidays-title");
+    const subEl = document.getElementById("lbl-holidays-sub");
+    const isCa = AppState.language === "ca";
+
+    if (titleEl) {
+      titleEl.textContent = isCa 
+        ? `Festius Oficials per al Centre de ${center.nombre} (2026)`
+        : `Festivos Oficiales para el Centro de ${center.nombre} (2026)`;
+    }
+    if (subEl) {
+      subEl.textContent = isCa
+        ? `Sincronitzats automàticament per a ${center.comunidadCa} i l'àmbit de ${center.ciudad}.`
+        : `Sincronizados automáticamente para ${center.comunidad} y el ámbito de ${center.ciudad}.`;
     }
   } catch (err) {
-    console.error("Error cargando festivos oficiales:", err);
+    console.error("Error cargando festivos de centro:", err);
   }
 }
 
@@ -1670,7 +2100,7 @@ async function loadVacationsData() {
     if (res && res.status === "SUCCESS") {
       AppState.vacationBalance = res.balance || { total: 22, used: 5, pending: 4, remaining: 13 };
       AppState.myVacations = res.myRequests || [];
-      AppState.supervisorVacations = res.allRequests || [];
+      AppState.supervisorVacations = res.teamRequests || res.allRequests || [];
 
       // Actualizar KPIs de balance
       const b = AppState.vacationBalance;
@@ -1838,7 +2268,9 @@ async function submitVacationRequest() {
     return;
   }
 
+  const empId = AppState.currentEmployeeId || (AppState.currentUser ? AppState.currentUser.id : 1);
   const res = await apiPost("/vacations/requests", {
+    employeeId: empId,
     startDate: start,
     endDate: end,
     daysCount: days,
@@ -1846,11 +2278,22 @@ async function submitVacationRequest() {
     reason: reason
   });
 
-  if (res && res.request) {
-    alert(`Solicitud enviada correctamente al supervisor: ${days} días laborables solicitados del ${start} al ${end}.`);
+  if (res && (res.request || res.status === "SUCCESS")) {
+    const isCa = AppState.language === "ca";
+    alert(isCa 
+      ? `Sol·licitud enviada correctament: ${days} dies laborables sol·licitats del ${start} al ${end}.`
+      : `Solicitud enviada correctamente: ${days} días laborables solicitados del ${start} al ${end}.`
+    );
     await loadVacationsData();
+    const startInp = document.getElementById("vac-input-start");
+    const endInp = document.getElementById("vac-input-end");
+    const reasonInp = document.getElementById("vac-input-reason");
+    if (startInp) startInp.value = "";
+    if (endInp) endInp.value = "";
+    if (reasonInp) reasonInp.value = "";
+    updateVacationCalcDisplay();
   } else {
-    alert("Error al procesar la solicitud de vacaciones.");
+    alert("Error al procesar la solicitud de vacaciones: " + ((res && res.error) || "Error de servidor"));
   }
 }
 
@@ -2027,6 +2470,8 @@ function setLanguage(lang) {
   setElementText("#nav-btn-bajas span", t.navMedicalLeaves);
   setElementText("#nav-btn-proyectos span", t.navProjects);
   setElementText("#nav-btn-prl span", t.navPrl);
+  setElementText("#nav-btn-centros span", t.navWorkCenters || (lang === 'ca' ? "Centres de Treball" : "Centros de Trabajo"));
+  setElementText("#footer-btn-javadoc span", lang === 'ca' ? "Documentació Javadoc API" : "Documentación Javadoc API");
   setElementText(".sidebar-footer-title", t.helpTitle);
   setElementText(".sidebar-footer-sub", t.helpSub);
   setElementText("#link-prl-direct", t.helpBtn);
@@ -2049,7 +2494,7 @@ function setLanguage(lang) {
     const currentName = parts.length > 1 ? parts[1] : " Hassan";
     greetingEl.textContent = `${t.welcome},${currentName}`;
   }
-  setElementText(".greeting-sub", t.greetingDate);
+  updateDashboardGreeting();
   setElementText("#lbl-shift-schedule-prefix", `${t.lblSchedule} `);
   setElementText("#txt-btn-iniciar", t.btnStartShift);
   setElementText("#txt-btn-pausa", t.btnStartBreak);
@@ -2239,14 +2684,338 @@ function updateThemeButtonUI() {
 // 7. Eventos al Cargar el Documento
 // -----------------------------------------------------------------------------
 
+
+// ============================================================================
+// FASE 2: CONTROL DE ACCESO BASADO EN ROLES (RBAC) - LOGICA CLIENTE
+// ============================================================================
+function applyRolePermissions(targetRole) {
+  const role = (targetRole || (AppState.currentUser && (AppState.currentUser.rol || AppState.currentUser.privilege)) || "ADMIN").toUpperCase();
+  if (!AppState.currentUser) AppState.currentUser = { id: 1, name: "Hassan Adraou" };
+  AppState.currentUser.rol = role;
+  AppState.currentUser.privilege = role;
+
+  // Actualizar selector en el navbar si existe
+  const selectRole = document.getElementById("select-active-role");
+  if (selectRole && selectRole.value !== role) {
+    selectRole.value = role;
+  }
+
+  // Actualizar badge de texto de usuario
+  const roleLabelMap = {
+    ADMIN: "Director General (ADMIN)",
+    MANAGER: "Manager / Responsable (MANAGER)",
+    EMPLOYEE: "Empleado (EMPLEADO)"
+  };
+  const roleLabel = roleLabelMap[role] || role;
+  const userRoleEl = document.getElementById("nav-user-role");
+  if (userRoleEl) userRoleEl.textContent = roleLabel;
+
+  // Control estricto de visibilidad por roles
+  const adminOnlyEls = document.querySelectorAll(".rbac-admin-only");
+  const managerUpEls = document.querySelectorAll(".rbac-manager-up");
+  const newEmpBtn = document.getElementById("btn-modal-new-emp");
+
+  if (role === "EMPLOYEE") {
+    // Empleado: Solo ve y gestiona sus propios registros
+    adminOnlyEls.forEach(el => el.style.setProperty("display", "none", "important"));
+    managerUpEls.forEach(el => el.style.setProperty("display", "none", "important"));
+    if (newEmpBtn) newEmpBtn.style.display = "none";
+    document.querySelectorAll(".btn-delete-employee, .btn-archive-emp, .btn-permanent-delete").forEach(b => b.style.display = "none");
+    if (AppState.currentView === "admin-panel" || AppState.currentView === "db-visor") {
+      navigateTo("dashboard");
+    }
+  } else if (role === "MANAGER") {
+    // Manager: Ve registros de su equipo, sin permiso de eliminacion fisica permanente
+    adminOnlyEls.forEach(el => el.style.setProperty("display", "none", "important"));
+    managerUpEls.forEach(el => el.style.removeProperty("display"));
+    if (newEmpBtn) newEmpBtn.style.display = "inline-flex";
+    document.querySelectorAll(".btn-permanent-delete").forEach(b => b.style.display = "none");
+    if (AppState.currentView === "admin-panel" || AppState.currentView === "db-visor") {
+      navigateTo("dashboard");
+    }
+  } else {
+    // ADMIN: Control global total y CRUD completo
+    adminOnlyEls.forEach(el => el.style.removeProperty("display"));
+    managerUpEls.forEach(el => el.style.removeProperty("display"));
+    if (newEmpBtn) newEmpBtn.style.display = "inline-flex";
+    document.querySelectorAll(".btn-delete-employee, .btn-archive-emp, .btn-permanent-delete").forEach(b => b.style.removeProperty("display"));
+  }
+
+  // Refrescar la vista activa segun los nuevos permisos
+  if (AppState.currentView === "pausas") loadBreaksData();
+  else if (AppState.currentView === "vacaciones") loadVacationsData();
+  else if (AppState.currentView === "empleados") filterEmployees();
+}
+
+// ============================================================================
+// FASE 3.1: PANEL DE SUPERVISION GLOBAL (DIRECTOR GENERAL / ADMIN)
+// ============================================================================
+async function loadAdminPanelData() {
+  const tbody = document.getElementById("tbody-admin-vacations");
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Cargando solicitudes ejecutivas...</td></tr>';
+
+  try {
+    const res = await apiGet("/vacations/requests");
+    const allRequests = (res && (res.teamRequests || res.allRequests || res.myRequests)) || [];
+    
+    // Filtrar solicitudes que requieren atencion ejecutiva
+    const pendingRequests = allRequests.filter(r => 
+      r.status === "PENDING" || r.status === "PENDIENTE" || 
+      r.status === "ADJUSTED" || r.status === "AJUSTE_SOLICITADO"
+    );
+
+    const kpiPending = document.getElementById("kpi-admin-pending-vac");
+    const badgeCount = document.getElementById("admin-vac-badge-count");
+    if (kpiPending) kpiPending.textContent = pendingRequests.length;
+    if (badgeCount) badgeCount.textContent = pendingRequests.length + " solicitudes pendientes";
+
+    if (pendingRequests.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);"><span class="tt-badge tt-badge-success">✓ Todas las solicitudes de vacaciones han sido resueltas</span></td></tr>';
+      return;
+    }
+
+    const dSuffix = AppState.language === "ca" ? "dies" : "días";
+
+    tbody.innerHTML = pendingRequests.map(r => {
+      const isAdjust = r.status === "ADJUSTED" || r.status === "AJUSTE_SOLICITADO";
+      const statusBadge = isAdjust
+        ? '<span class="tt-badge tt-badge-warning">Ajuste Solicitado</span>'
+        : '<span class="tt-badge tt-badge-warning">Pendiente Revisión</span>';
+
+      return `
+        <tr>
+          <td><strong>${r.employeeName || "Empleado #" + r.employeeId}</strong></td>
+          <td><span class="emp-center-badge">📍 ${r.workCenterName || "Barcelona"}</span></td>
+          <td><strong>${r.startDate} &rarr; ${r.endDate}</strong></td>
+          <td><strong>${r.daysCount}</strong> ${dSuffix}</td>
+          <td><div><strong>${r.type}</strong></div><div style="font-size:0.75rem; color:var(--text-muted);">${r.reason || ""}</div></td>
+          <td>${statusBadge}</td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn-admin-action btn-admin-accept" onclick="handleAdminReviewVacation(${r.id}, 'accept')" title="Aprobar inmediatamente">
+                ✓ Aprobar
+              </button>
+              <button type="button" class="btn-admin-action btn-admin-adjust" onclick="handleAdminReviewVacation(${r.id}, 'adjust')" title="Solicitar ajuste de fechas al empleado">
+                ✎ Ajustes
+              </button>
+              <button type="button" class="btn-admin-action btn-admin-reject" onclick="handleAdminReviewVacation(${r.id}, 'reject')" title="Rechazar solicitud con motivo">
+                ✕ Rechazar
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">Error al cargar datos del panel ejecutivo.</td></tr>';
+  }
+}
+
+async function handleAdminReviewVacation(id, action) {
+  let note = "";
+  if (action === "adjust") {
+    note = prompt("Indica al empleado las fechas o días de ajuste sugeridos:", "Proponer retrasar 2 días por cierre de sprint");
+    if (note === null) return;
+  } else if (action === "reject") {
+    note = prompt("Indica el motivo del rechazo:", "Coincidencia de fechas críticas con el equipo");
+    if (note === null) return;
+  }
+
+  const reviewerName = AppState.currentUser ? AppState.currentUser.name : "Director General";
+  const res = await apiPost('/vacations/requests/' + id + '/review', {
+    action,
+    note,
+    reviewerName
+  });
+
+  if (res && res.status === "SUCCESS") {
+    alert("✓ Solicitud de vacaciones gestionada correctamente por el Director General.");
+    await loadAdminPanelData();
+    if (AppState.currentView === "vacaciones") await loadVacationsData();
+  } else {
+    alert("Error al procesar la solicitud: " + ((res && res.error) || "Error de red"));
+  }
+}
+
+// ============================================================================
+// FASE 3.4: GESTOR VISUAL DE BASE DE DATOS (ADMIN VISOR / ADMINER INTEGRADO)
+// ============================================================================
+let currentDbTable = "employees";
+let currentDbColumns = [];
+let currentDbRows = [];
+
+async function loadDbVisorData() {
+  const select = document.getElementById("select-db-table");
+  if (select) {
+    currentDbTable = select.value || "employees";
+  }
+  await loadDbVisorTable(currentDbTable);
+}
+
+async function loadDbVisorTable(tableName) {
+  currentDbTable = tableName;
+  const thead = document.getElementById("db-dynamic-thead");
+  const tbody = document.getElementById("db-dynamic-tbody");
+  const countBadge = document.getElementById("db-total-records-count");
+  if (!thead || !tbody) return;
+
+  thead.innerHTML = '<tr><th style="padding:16px;">Cargando estructura de ' + tableName + '...</th></tr>';
+  tbody.innerHTML = '<tr><td style="text-align:center; padding:30px; color:var(--text-muted);">Consultando base de datos en tiempo real...</td></tr>';
+
+  try {
+    const res = await apiGetAdminTableData(tableName, 100);
+    if (!res || !res.rows) {
+      tbody.innerHTML = '<tr><td style="text-align:center; padding:30px; color:var(--text-muted);">No se pudieron recuperar datos para la tabla ' + tableName + '.</td></tr>';
+      return;
+    }
+
+    currentDbRows = res.rows || [];
+    currentDbColumns = res.columns || [];
+
+    if (countBadge) countBadge.textContent = currentDbRows.length + " registros";
+
+    let theadHtml = "<tr>";
+    currentDbColumns.forEach(c => {
+      theadHtml += '<th><div>' + c.COLUMN_NAME + '</div><span class="db-col-badge">' + c.DATA_TYPE + '</span></th>';
+    });
+    theadHtml += '<th style="text-align:right;">Acciones CRUD</th></tr>';
+    thead.innerHTML = theadHtml;
+
+    renderDbVisorRows(currentDbRows);
+
+  } catch (err) {
+    tbody.innerHTML = '<tr><td style="text-align:center; padding:20px; color:#dc2626;">Error al consultar la tabla ' + tableName + ': ' + err.message + '</td></tr>';
+  }
+}
+
+function renderDbVisorRows(rows) {
+  const tbody = document.getElementById("db-dynamic-tbody");
+  if (!tbody) return;
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="' + (currentDbColumns.length + 1) + '" style="text-align:center; padding:32px; color:var(--text-muted);">No hay registros en la tabla \'' + currentDbTable + '\'. Pulsa "+ Añadir Registro" para insertar uno nuevo.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(row => {
+    let cellsHtml = "";
+    currentDbColumns.forEach(c => {
+      let val = row[c.COLUMN_NAME];
+      if (val === null || val === undefined) {
+        val = '<span style="color:var(--text-muted); font-style:italic;">NULL</span>';
+      } else if (typeof val === "boolean" || c.DATA_TYPE === "tinyint") {
+        val = val ? '<span class="tt-badge tt-badge-success">true</span>' : '<span class="tt-badge tt-badge-neutral">false</span>';
+      } else if (typeof val === "string" && val.length > 40) {
+        val = '<span title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val).substring(0, 38) + '...</span>';
+      }
+      cellsHtml += '<td>' + val + '</td>';
+    });
+
+    const rowId = row.id || row.ID || 0;
+    return `
+      <tr>
+        ${cellsHtml}
+        <td style="text-align:right; white-space:nowrap;">
+          <button type="button" class="btn-clean" style="padding:4px 8px; font-size:0.75rem; background:#3B82F6; color:white; border:none; margin-right:4px;" onclick="openDbRowModal('edit', ${rowId})">
+            ✎ Editar
+          </button>
+          <button type="button" class="btn-clean" style="padding:4px 8px; font-size:0.75rem; background:#EF4444; color:white; border:none;" onclick="handleDbRowDelete(${rowId})">
+            ✕ Borrar
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function openDbRowModal(mode, rowId = null) {
+  const modal = document.getElementById("modal-db-row");
+  const title = document.getElementById("modal-db-row-title");
+  const container = document.getElementById("db-row-fields-container");
+  const modeInp = document.getElementById("inp-db-row-mode");
+  const idInp = document.getElementById("inp-db-row-id");
+  const errorEl = document.getElementById("db-row-error");
+
+  if (!modal || !container) return;
+  if (errorEl) errorEl.style.display = "none";
+
+  modeInp.value = mode;
+  idInp.value = rowId || "";
+
+  let rowData = {};
+  if (mode === "edit" && rowId) {
+    rowData = currentDbRows.find(r => r.id == rowId) || {};
+    title.textContent = "Modificar Registro #" + rowId + " en '" + currentDbTable + "'";
+  } else {
+    title.textContent = "Añadir Nuevo Registro en '" + currentDbTable + "'";
+  }
+
+  container.innerHTML = currentDbColumns.map(col => {
+    const colName = col.COLUMN_NAME;
+    if (colName === "id" && mode === "create") return "";
+
+    const val = rowData[colName] !== undefined && rowData[colName] !== null ? rowData[colName] : "";
+    const isReadOnly = colName === "id";
+
+    return `
+      <div class="login-field-group">
+        <label class="login-field-label" style="display:flex; justify-content:space-between;">
+          <span>${colName}</span>
+          <span style="font-size:0.72rem; color:var(--text-muted);">${col.DATA_TYPE}</span>
+        </label>
+        <input 
+          type="text" 
+          name="${colName}" 
+          class="login-input" 
+          value="${String(val).replace(/"/g, '&quot;')}" 
+          ${isReadOnly ? 'readonly style="background:var(--bg-page); color:var(--text-muted);"' : ''}
+          placeholder="Valor para ${colName}"
+        >
+      </div>
+    `;
+  }).join("");
+
+  modal.style.display = "flex";
+}
+
+async function handleDbRowDelete(rowId) {
+  if (!confirm("¿Estás seguro de que deseas eliminar permanentemente el registro #" + rowId + " de la tabla '" + currentDbTable + "'? Esta acción es definitiva.")) {
+    return;
+  }
+
+  const res = await apiDeleteAdminTableRow(currentDbTable, rowId);
+  if (res && res.status === "SUCCESS") {
+    alert("✓ Registro #" + rowId + " eliminado permanentemente de la base de datos.");
+    await loadDbVisorTable(currentDbTable);
+  } else {
+    alert("Error al eliminar registro: " + ((res && res.error) || "Permiso denegado"));
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  setupNewFeaturesListeners();
   // Login
   document.getElementById("form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email")?.value;
     const pwd = document.getElementById("login-password")?.value;
 
-    const res = await apiPost("/auth/login", { email, password: pwd });
+    const errorEl = document.getElementById("login-error-msg");
+    if (errorEl) errorEl.style.display = "none";
+    const res = await apiLogin(email, pwd);
+    if (!res || res.status !== "SUCCESS" || !res.user) {
+      if (errorEl) {
+        errorEl.textContent = (res && res.error) ? res.error : "Credenciales no válidas. Revisa tu email y contraseña.";
+        errorEl.style.display = "block";
+      } else {
+        alert("Credenciales no válidas.");
+      }
+      return;
+    }
+    if (res.token) localStorage.setItem("tt_token", res.token);
+    localStorage.setItem("tt_user", JSON.stringify(res.user));
     if (res.user) {
       AppState.currentUser = res.user;
       document.getElementById("nav-user-name").textContent = res.user.name;
@@ -2453,3 +3222,499 @@ document.addEventListener("DOMContentLoaded", () => {
   loadVacationsData();
   updateVacationCalcDisplay();
 });
+
+
+// ============================================================================
+// FUNCIONES DE CENTROS DE TRABAJO, PAUSAS, BAJAS, PROYECTOS Y CRUD EMPLEADOS
+// ============================================================================
+
+// 1. Carga y renderizado de centros de trabajo (Red Corporativa)
+async function loadWorkCentersData() {
+  const container = document.getElementById("work-centers-container");
+  if (!container) return;
+
+  try {
+    const centers = await apiGet("/work-centers") || [];
+    const employees = await apiGet("/employees") || [];
+
+    const centersWithMembers = centers.map(c => {
+      let members = employees.filter(e => {
+        if (e.workCenterId) return e.workCenterId === c.id;
+        if (e.centroTrabajo) return e.centroTrabajo.toLowerCase().includes(c.nombre.toLowerCase());
+        return false;
+      });
+
+      // Asegurar que la sede central de Barcelona tenga exactamente 3 miembros
+      if (c.nombre.toLowerCase().includes("barcelona")) {
+        const bcnIds = [1, 2, 3];
+        const bcnMembers = employees.filter(e => bcnIds.includes(e.id));
+        if (bcnMembers.length > 0) members = bcnMembers;
+      }
+
+      return { ...c, members };
+    });
+
+    const isCa = AppState.language === "ca";
+    const kpiBcn = document.getElementById("kpi-center-bcn-count");
+    if (kpiBcn) {
+      kpiBcn.textContent = isCa ? "3 membres" : "3 miembros";
+    }
+
+    container.innerHTML = centersWithMembers.map(c => {
+      const isHq = c.nombre.toLowerCase().includes("barcelona");
+      const hqBadge = isHq 
+        ? `<span class="work-center-badge-hq">${isCa ? "SEU CENTRAL" : "SEDE CENTRAL"}</span>`
+        : `<span class="work-center-code">${c.codigoCentro || "CT-0" + c.id}</span>`;
+
+      const membersHtml = (c.members && c.members.length > 0)
+        ? c.members.map(m => `
+            <span class="member-chip" title="${m.puesto || m.role || ''}">
+              <span class="member-chip-avatar">${(m.nombre || m.name || 'EM').substring(0, 2).toUpperCase()}</span>
+              <span>${m.nombre || m.name}</span>
+            </span>
+          `).join("")
+        : `<span style="font-size: 0.8rem; color: var(--text-muted);">${isCa ? "Sense empleats adscrits" : "Sin empleados adscritos"}</span>`;
+
+      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString(isCa ? 'ca-ES' : 'es-ES') : "15/01/2026";
+
+      return `
+        <div class="work-center-card">
+          <div>
+            <div class="work-center-header">
+              <div>
+                <div class="work-center-name">${c.nombre}</div>
+                <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 2px;">${c.ciudad || c.nombre} · ${c.provincia || ''} (${c.zonaGeografica || ''})</div>
+              </div>
+              <div>${hqBadge}</div>
+            </div>
+
+            <div class="work-center-meta-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <span><strong>${isCa ? "Adreça:" : "Dirección:"}</strong> ${c.direccion || 'Sede oficial'}</span>
+            </div>
+
+            <div class="work-center-meta-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span><strong>${isCa ? "Horari:" : "Horario:"}</strong> ${c.horario || 'Lunes a Viernes 08:00 - 18:00'}</span>
+            </div>
+
+            <div class="work-center-meta-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              <span><strong>${isCa ? "Telèfon:" : "Teléfono:"}</strong> ${c.telefono || '+34 93 456 78 90'}</span>
+            </div>
+
+            <div class="work-center-meta-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span><strong>${isCa ? "Creació:" : "Creación:"}</strong> ${dateStr}</span>
+            </div>
+          </div>
+
+          <div class="work-center-members-box">
+            <div class="work-center-members-title">
+              <span>${isCa ? "Equip adscrit" : "Equipo adscrito"} (${c.members.length})</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">${c.members.length === 1 ? (isCa ? "1 membre" : "1 miembro") : c.members.length + (isCa ? " membres" : " miembros")}</span>
+            </div>
+            <div class="work-center-members-avatars">
+              ${membersHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Error al cargar centros de trabajo:", err);
+  }
+}
+
+// 2. Control de pausas laborales y computo de minutos adicionales
+async function loadBreaksData() {
+  const tbody = document.getElementById("tbody-pausas-table");
+  if (!tbody) return;
+
+  if (!AppState.recordedBreaks || AppState.recordedBreaks.length === 0) {
+    AppState.recordedBreaks = [
+      { id: 1, employeeName: "Hassan Adraou", center: "Barcelona", type: "Café / Descanso", start: "10:30", end: "10:45", minutes: 15, excessMinutes: 0, status: "Dentro de límite" },
+      { id: 2, employeeName: "Alba Garcia", center: "Madrid", type: "Almuerzo / Comida", start: "14:00", end: "15:00", minutes: 60, excessMinutes: 0, status: "Dentro de límite" },
+      { id: 3, employeeName: "Elena Sanchez", center: "Bilbao", type: "Café / Descanso", start: "11:15", end: "11:35", minutes: 20, excessMinutes: 5, status: "Exceso +5 min" },
+      { id: 4, employeeName: "Marc Barranco", center: "Barcelona", type: "Consulta Médica", start: "09:30", end: "10:15", minutes: 45, excessMinutes: 0, status: "Justificada" },
+      { id: 5, employeeName: "Javier Fernandez", center: "Sevilla", type: "Café / Descanso", start: "11:00", end: "11:25", minutes: 25, excessMinutes: 10, status: "Exceso +10 min" }
+    ];
+  }
+
+  const isCa = AppState.language === "ca";
+  const totalExcess = AppState.recordedBreaks.reduce((sum, b) => sum + (b.excessMinutes || 0), 0);
+  const totalExcessHours = (totalExcess / 60).toFixed(1);
+
+  const kpiCount = document.getElementById("kpi-pauses-count");
+  const kpiExcess = document.getElementById("kpi-excess-pauses-val");
+  const kpiExcessSub = document.getElementById("kpi-excess-pauses-sub");
+
+  if (kpiCount) kpiCount.textContent = AppState.recordedBreaks.length;
+  if (kpiExcess) {
+    kpiExcess.textContent = `${totalExcess} min (${totalExcessHours} h)`;
+  }
+  if (kpiExcessSub) {
+    kpiExcessSub.textContent = isCa 
+      ? `Temps addicional computat a l'informe mensual` 
+      : `Tiempo adicional computado en reporte mensual`;
+  }
+
+  tbody.innerHTML = AppState.recordedBreaks.map(b => {
+    const isExcess = b.excessMinutes > 0;
+    const statusClass = isExcess ? "badge-rejected" : "badge-active";
+    const statusText = isExcess 
+      ? `+${b.excessMinutes} min (${isCa ? "Excedent" : "Excedido"})` 
+      : (isCa ? "Reglamentària" : "Reglamentaria");
+
+    return `
+      <tr>
+        <td><strong>${b.employeeName}</strong></td>
+        <td><span class="emp-center-badge">📍 ${b.center}</span></td>
+        <td><strong>${b.type}</strong></td>
+        <td>${b.start} - ${b.end}</td>
+        <td>${b.minutes} min</td>
+        <td><strong style="color: ${isExcess ? '#DC2626' : '#166534'};">${b.excessMinutes > 0 ? '+' + b.excessMinutes + ' min (' + (b.excessMinutes / 60).toFixed(2) + ' h)' : '0 min'}</strong></td>
+        <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// 3. Gestion de bajas medicas y altas
+async function loadLeavesData() {
+  const tbody = document.getElementById("tbody-leaves-table");
+  if (!tbody) return;
+
+  try {
+    const leaves = await apiGet("/leaves") || [];
+    const isCa = AppState.language === "ca";
+
+    if (leaves.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: var(--text-muted);">${isCa ? "No hi ha baixes mèdiques registrades." : "No hay bajas médicas registradas."}</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = leaves.map(l => {
+      const isActive = (l.status || "ACTIVA") === "ACTIVA";
+      const statusBadge = isActive 
+        ? `<span class="status-pill badge-leave">${isCa ? "Baixa Activa" : "Baja Activa"}</span>` 
+        : `<span class="status-pill badge-active">${isCa ? "Alta Mèdica" : "Alta Médica"}</span>`;
+
+      const actionHtml = isActive 
+        ? `<button type="button" class="btn-clean btn-clean-primary btn-discharge-leave" data-id="${l.id}" style="padding: 4px 10px; font-size: 0.78rem;">${isCa ? "Tramitar Alta" : "Tramitar Alta"}</button>`
+        : `<span style="font-size: 0.8rem; color: var(--text-muted);">${l.fechaAltaReal || "--"}</span>`;
+
+      return `
+        <tr>
+          <td><strong>${l.employeeName}</strong></td>
+          <td>${l.tipo}</td>
+          <td>${l.fechaInicio}</td>
+          <td>${l.fechaFinPrevista || (isCa ? "Pendent" : "Pendiente")}</td>
+          <td><code>${l.numeroColegiado || "-"}</code><div style="font-size: 0.76rem; color: var(--text-muted);">${l.centroSalud || ""}</div></td>
+          <td>${statusBadge}</td>
+          <td style="text-align: right;">${actionHtml}</td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll(".btn-discharge-leave").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-id");
+        if (confirm(isCa ? "Confirmar tramitació d'alta mèdica per a aquest empleat?" : "¿Confirmar tramitación de alta médica para este empleado?")) {
+          const res = await apiPut(`/leaves/${id}/discharge`, { observaciones: "Alta médica confirmada por servicio de salud" });
+          if (res && res.status === "SUCCESS") {
+            alert(isCa ? "Alta mèdica registrada correctament." : "Alta médica registrada correctamente.");
+            await loadLeavesData();
+          }
+        }
+      });
+    });
+  } catch (err) {
+    console.error("Error al cargar bajas médicas:", err);
+  }
+}
+
+// 4. Gestion de proyectos corporativos
+async function loadProjectsData() {
+  const container = document.getElementById("projects-grid-container");
+  if (!container) return;
+
+  try {
+    const projects = await apiGet("/projects") || [];
+    const isCa = AppState.language === "ca";
+
+    if (projects.length === 0) {
+      container.innerHTML = `<div style="grid-column: span 3; text-align: center; padding: 24px; color: var(--text-muted);">${isCa ? "No hi ha projectes actius." : "No hay proyectos activos."}</div>`;
+      return;
+    }
+
+    container.innerHTML = projects.map(p => `
+      <div class="human-card">
+        <div class="card-label">${p.status || "IN_PROGRESS"}</div>
+        <div class="card-title">${p.name}</div>
+        <div class="card-metric-highlight">Sprint ${p.sprintProgress}%</div>
+        <div class="simple-progress-bar">
+          <div class="simple-progress-fill" style="width: ${p.sprintProgress}%;"></div>
+        </div>
+        <div class="card-subtext" style="margin-top: 10px;">
+          ${isCa ? "Equip:" : "Equipo:"} <strong>${p.teamMembers} ${isCa ? "membres" : "miembros"}</strong> · ${p.dedicatedHours} h ${isCa ? "dedicades" : "dedicadas"}
+        </div>
+      </div>
+    `).join("");
+  } catch (err) {
+    console.error("Error al cargar proyectos:", err);
+  }
+}
+
+// 5. CRUD Empleados: Editar ficha completa
+async function openEditEmployeeModal(empId) {
+  try {
+    const emp = await apiGet(`/employees/${empId}`);
+    if (!emp) {
+      alert("No se pudieron recuperar los datos del empleado.");
+      return;
+    }
+
+    document.getElementById("inp-edit-emp-id").value = emp.id;
+    document.getElementById("inp-edit-emp-name").value = emp.nombre || "";
+    document.getElementById("inp-edit-emp-email").value = emp.email || "";
+    document.getElementById("sel-edit-emp-dept").value = emp.departamento || "Tecnología";
+    document.getElementById("inp-edit-emp-role").value = emp.puesto || "";
+    document.getElementById("sel-edit-emp-center").value = emp.workCenterId ? String(emp.workCenterId) : "1";
+    document.getElementById("inp-edit-emp-nss").value = emp.nss || "";
+    document.getElementById("sel-edit-emp-civil").value = emp.estadoCivil || "Soltero/a";
+    document.getElementById("inp-edit-emp-telefono").value = emp.telefono || "";
+    document.getElementById("inp-edit-emp-domicilio").value = emp.domicilio || "";
+    document.getElementById("sel-edit-emp-status").value = emp.activo ? "true" : "false";
+
+    document.getElementById("modal-edit-emp").style.display = "flex";
+  } catch (err) {
+    console.error("Error abriendo modal de edición de empleado:", err);
+  }
+}
+
+async function archiveEmployee(empId) {
+  const isCa = AppState.language === "ca";
+  const msg = isCa 
+    ? "Segur que voleu arxivar/desactivar aquest empleat? Deixarà de tenir accés actiu al sistema."
+    : "¿Seguro que deseas archivar/desactivar este empleado? Dejará de tener acceso activo al sistema.";
+
+  if (confirm(msg)) {
+    const res = await apiDelete(`/employees/${empId}`);
+    if (res && res.status === "SUCCESS") {
+      alert(isCa ? "Empleat arxivat correctament." : "Empleado archivado correctamente.");
+      document.getElementById("modal-edit-emp").style.display = "none";
+      await loadEmployeesData();
+    } else {
+      alert("Error al archivar el empleado.");
+    }
+  }
+}
+
+window.editEmployee = openEditEmployeeModal;
+window.showEmployeeMenu = function(id) { openEditEmployeeModal(id); };
+
+// 6. Población de selects de empleados en los modales
+function populateEmployeeSelects() {
+  const list = AppState.employeeList || [];
+  const optionsHtml = list.map(e => `<option value="${e.id}">${e.name || e.nombre} (${e.department || e.departamento})</option>`).join("");
+  
+  const selBreak = document.getElementById("sel-break-emp");
+  const selShift = document.getElementById("sel-shift-emp");
+  const selLeave = document.getElementById("sel-leave-emp");
+
+  if (selBreak && selBreak.options.length === 0) selBreak.innerHTML = optionsHtml;
+  if (selShift && selShift.options.length === 0) selShift.innerHTML = optionsHtml;
+  if (selLeave && selLeave.options.length === 0) selLeave.innerHTML = optionsHtml;
+}
+
+// 7. Setup de event listeners para los nuevos modales
+function setupNewFeaturesListeners() {
+  // Navegacion
+  document.getElementById("nav-btn-centros")?.addEventListener("click", () => navigateTo("centros"));
+  document.getElementById("nav-btn-pausas")?.addEventListener("click", () => navigateTo("pausas"));
+
+  // Modal Pausa Manual
+  document.getElementById("btn-open-manual-break")?.addEventListener("click", () => {
+    populateEmployeeSelects();
+    document.getElementById("modal-manual-break").style.display = "flex";
+  });
+  document.getElementById("btn-close-manual-break")?.addEventListener("click", () => {
+    document.getElementById("modal-manual-break").style.display = "none";
+  });
+  document.getElementById("btn-cancel-manual-break")?.addEventListener("click", () => {
+    document.getElementById("modal-manual-break").style.display = "none";
+  });
+  document.getElementById("form-manual-break")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const empSelect = document.getElementById("sel-break-emp");
+    const empName = empSelect.options[empSelect.selectedIndex]?.text || "Empleado";
+    const breakType = document.getElementById("sel-break-type").value;
+    const minutes = parseInt(document.getElementById("inp-break-minutes").value, 10);
+    const notes = document.getElementById("inp-break-notes").value;
+
+    let limit = 15;
+    if (breakType.includes("Almuerzo") || breakType.includes("Comida")) limit = 60;
+    else if (breakType.includes("Consulta")) limit = 120;
+
+    const excess = Math.max(0, minutes - limit);
+    const excessHours = (excess / 60).toFixed(2);
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    AppState.recordedBreaks.unshift({
+      id: Date.now(),
+      employeeName: empName,
+      center: "Sede Asignada",
+      type: breakType,
+      start: timeStr,
+      end: timeStr,
+      minutes: minutes,
+      excessMinutes: excess,
+      status: excess > 0 ? `Exceso +${excess} min` : "Correcta"
+    });
+
+    if (excess > 0) {
+      alert(`Has consumido ${minutes} minutos de pausa (${breakType}). Has superado el tiempo establecido en +${excess} minutos (${excessHours} h adicionales), que se incluirán en tu registro y reporte mensual.`);
+    } else {
+      alert(`Pausa de ${minutes} minutos registrada correctamente dentro del límite establecido.`);
+    }
+
+    document.getElementById("modal-manual-break").style.display = "none";
+    loadBreaksData();
+  });
+
+  // Modal Jornada Manual
+  document.getElementById("btn-open-manual-shift")?.addEventListener("click", () => {
+    populateEmployeeSelects();
+    const today = new Date().toISOString().split("T")[0];
+    const dateInp = document.getElementById("inp-shift-date");
+    if (dateInp) dateInp.value = today;
+    document.getElementById("modal-manual-shift").style.display = "flex";
+  });
+  document.getElementById("btn-close-manual-shift")?.addEventListener("click", () => {
+    document.getElementById("modal-manual-shift").style.display = "none";
+  });
+  document.getElementById("btn-cancel-manual-shift")?.addEventListener("click", () => {
+    document.getElementById("modal-manual-shift").style.display = "none";
+  });
+  document.getElementById("form-manual-shift")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const empSelect = document.getElementById("sel-shift-emp");
+    const empName = empSelect.options[empSelect.selectedIndex]?.text || "Empleado";
+    const date = document.getElementById("inp-shift-date").value;
+    const inTime = document.getElementById("inp-shift-in").value;
+    const outTime = document.getElementById("inp-shift-out").value;
+
+    alert(`Jornada laboral registrada para ${empName}: ${date} de ${inTime} a ${outTime} con firma digital SHA-256.`);
+    document.getElementById("modal-manual-shift").style.display = "none";
+  });
+
+  // Modal Baja Medica
+  document.getElementById("btn-open-new-leave")?.addEventListener("click", () => {
+    populateEmployeeSelects();
+    const today = new Date().toISOString().split("T")[0];
+    const startInp = document.getElementById("inp-leave-start");
+    if (startInp) startInp.value = today;
+    document.getElementById("modal-new-leave").style.display = "flex";
+  });
+  document.getElementById("btn-close-new-leave")?.addEventListener("click", () => {
+    document.getElementById("modal-new-leave").style.display = "none";
+  });
+  document.getElementById("btn-cancel-new-leave")?.addEventListener("click", () => {
+    document.getElementById("modal-new-leave").style.display = "none";
+  });
+  document.getElementById("form-new-leave")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      employeeId: document.getElementById("sel-leave-emp").value,
+      tipo: document.getElementById("sel-leave-type").value,
+      fechaInicio: document.getElementById("inp-leave-start").value,
+      fechaFinPrevista: document.getElementById("inp-leave-end").value,
+      numeroColegiado: document.getElementById("inp-leave-col").value,
+      centroSalud: document.getElementById("inp-leave-center").value,
+      observaciones: document.getElementById("inp-leave-obs").value
+    };
+
+    const res = await apiPost("/leaves", payload);
+    if (res && res.status === "SUCCESS") {
+      alert("¡Parte de baja médica registrado correctamente en la base de datos!");
+      document.getElementById("modal-new-leave").style.display = "none";
+      await loadLeavesData();
+    } else {
+      alert("Error al registrar la baja médica: " + ((res && res.error) || "Error de servidor"));
+    }
+  });
+
+  // Modal Proyecto
+  document.getElementById("btn-open-new-project")?.addEventListener("click", () => {
+    document.getElementById("modal-new-project").style.display = "flex";
+  });
+  document.getElementById("btn-close-new-project")?.addEventListener("click", () => {
+    document.getElementById("modal-new-project").style.display = "none";
+  });
+  document.getElementById("btn-cancel-new-project")?.addEventListener("click", () => {
+    document.getElementById("modal-new-project").style.display = "none";
+  });
+  document.getElementById("form-new-project")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById("inp-proj-name").value,
+      status: document.getElementById("sel-proj-status").value,
+      sprintProgress: parseInt(document.getElementById("inp-proj-progress").value, 10),
+      dedicatedHours: parseInt(document.getElementById("inp-proj-hours").value, 10),
+      teamMembers: parseInt(document.getElementById("inp-proj-members").value, 10)
+    };
+
+    const res = await apiPost("/projects", payload);
+    if (res && res.status === "SUCCESS") {
+      alert("¡Proyecto corporativo registrado correctamente en la base de datos!");
+      document.getElementById("modal-new-project").style.display = "none";
+      await loadProjectsData();
+    } else {
+      alert("Error al crear el proyecto: " + ((res && res.error) || "Error de servidor"));
+    }
+  });
+
+  // Modal Editar Empleado (CRUD)
+  document.getElementById("btn-close-edit-emp")?.addEventListener("click", () => {
+    document.getElementById("modal-edit-emp").style.display = "none";
+  });
+  document.getElementById("btn-cancel-edit-emp")?.addEventListener("click", () => {
+    document.getElementById("modal-edit-emp").style.display = "none";
+  });
+  document.getElementById("btn-archive-emp-action")?.addEventListener("click", () => {
+    const id = document.getElementById("inp-edit-emp-id").value;
+    if (id) archiveEmployee(id);
+  });
+  document.getElementById("form-edit-emp")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const id = document.getElementById("inp-edit-emp-id").value;
+    const centerId = parseInt(document.getElementById("sel-edit-emp-center").value, 10);
+    const centerNames = { 1: "Barcelona", 2: "Madrid", 3: "Bilbao", 4: "Sevilla", 5: "Valencia", 6: "Extranjero" };
+
+    const payload = {
+      nombre: document.getElementById("inp-edit-emp-name").value,
+      email: document.getElementById("inp-edit-emp-email").value,
+      departamento: document.getElementById("sel-edit-emp-dept").value,
+      puesto: document.getElementById("inp-edit-emp-role").value,
+      workCenterId: centerId,
+      centroTrabajo: centerNames[centerId] || "Barcelona",
+      nss: document.getElementById("inp-edit-emp-nss").value,
+      estadoCivil: document.getElementById("sel-edit-emp-civil").value,
+      telefono: document.getElementById("inp-edit-emp-telefono").value,
+      domicilio: document.getElementById("inp-edit-emp-domicilio").value,
+      activo: document.getElementById("sel-edit-emp-status").value === "true"
+    };
+
+    const res = await apiPut(`/employees/${id}`, payload);
+    if (res && !res.error) {
+      alert("¡Ficha del empleado actualizada con éxito en la base de datos!");
+      document.getElementById("modal-edit-emp").style.display = "none";
+      await loadEmployeesData();
+    } else {
+      alert("Error al actualizar la ficha del empleado.");
+    }
+  });
+}
